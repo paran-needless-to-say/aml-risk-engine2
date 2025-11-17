@@ -148,26 +148,33 @@ class TransactionScorer:
         tx: TransactionInput
     ) -> List[str]:
         """Risk Tags 생성"""
-        tags = []
+        tags = set()
+        
+        # 룰 로더에서 룰 이름 가져오기
+        from ..rules.loader import RuleLoader
+        rule_loader = RuleLoader()
+        rules = rule_loader.get_rules()
+        rule_map = {rule.get("id"): rule.get("name", rule.get("id")) for rule in rules if rule.get("id")}
         
         # 룰 결과에서 태그 추출
         for result in rule_results:
             rule_id = result.get("rule_id", "")
-            if "MIXER" in rule_id:
-                tags.append("mixer_inflow")
-            elif "SANCTION" in rule_id:
-                tags.append("sanction_exposure")
-            elif "SCAM" in rule_id:
-                tags.append("scam_exposure")
-            elif "AMOUNT" in rule_id:
-                tags.append("high_value_transfer")
-            elif "BRIDGE" in rule_id:
-                tags.append("bridge_large_transfer")
-            elif "CEX" in rule_id:
-                tags.append("cex_inflow")
+            rule_name = rule_map.get(rule_id, "").lower()
+            
+            if "mixer" in rule_name or "E-101" in rule_id:
+                tags.add("mixer_inflow")
+            if "sanction" in rule_name or "C-001" in rule_id:
+                tags.add("sanction_exposure")
+            if "scam" in rule_name:
+                tags.add("scam_exposure")
+            if "high-value" in rule_name or "C-003" in rule_id or "C-004" in rule_id:
+                tags.add("high_value_transfer")
+            if "bridge" in rule_name:
+                tags.add("bridge_large_transfer")
+            if "cex" in rule_name:
+                tags.add("cex_inflow")
         
-        # 중복 제거
-        return list(set(tags))
+        return sorted(list(tags))
     
     def _generate_explanation(
         self,
@@ -175,29 +182,46 @@ class TransactionScorer:
         rule_results: List[Dict[str, Any]],
         risk_level: str
     ) -> str:
-        """설명 텍스트 생성"""
+        """설명 텍스트 생성 (입출력 포맷에 맞춤)"""
+        if not rule_results:
+            return "정상 거래 패턴으로 리스크가 낮습니다."
+        
+        # 룰 로더에서 룰 이름 가져오기
+        from ..rules.loader import RuleLoader
+        rule_loader = RuleLoader()
+        rules = rule_loader.get_rules()
+        rule_map = {rule.get("id"): rule.get("name", rule.get("id")) for rule in rules if rule.get("id")}
+        
         parts = []
         
-        if tx.is_mixer:
-            parts.append(f"1-hop mixer에서 {tx.amount_usd:,.0f}USD 유입")
+        # Mixer 관련
+        mixer_rules = [r for r in rule_results if "E-101" in r.get("rule_id", "")]
+        if mixer_rules or tx.is_mixer:
+            amount_text = f"{tx.amount_usd:,.0f}USD 이상" if tx.amount_usd >= 1000 else f"{tx.amount_usd:,.0f}USD"
+            parts.append(f"1-hop sanctioned mixer에서 {amount_text} 유입")
         
-        if tx.is_sanctioned:
+        # 제재 주소 관련
+        sanction_rules = [r for r in rule_results if "C-001" in r.get("rule_id", "")]
+        if sanction_rules or tx.is_sanctioned:
             parts.append("제재 대상과 거래")
         
-        if tx.is_known_scam:
-            parts.append("알려진 사기 주소와 거래")
-        
-        if tx.amount_usd >= 1000:
+        # 고액 거래 관련
+        high_value_rules = [r for r in rule_results if "C-003" in r.get("rule_id", "") or "C-004" in r.get("rule_id", "")]
+        if high_value_rules or tx.amount_usd >= 1000:
             parts.append(f"고액 거래 ({tx.amount_usd:,.0f}USD)")
-        
-        if tx.is_bridge and tx.amount_usd >= 5000:
-            parts.append("대량 브릿지 거래")
         
         if not parts:
             parts.append("일반 거래")
         
         explanation = ", ".join(parts)
-        explanation += f"로 인해 {risk_level}로 분류됨."
+        
+        # 리스크 레벨에 따른 설명 추가
+        if risk_level == "high" or risk_level == "critical":
+            explanation += f"로 인해 세탁 자금 유입 패턴에 해당하여 {risk_level}로 분류됨."
+        elif risk_level == "medium":
+            explanation += f"로 인해 {risk_level} 리스크로 분류됨."
+        else:
+            explanation += f"로 인해 {risk_level} 리스크로 분류됨."
         
         return explanation
 

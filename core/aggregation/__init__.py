@@ -1,6 +1,9 @@
 """
-AI 집계 모듈 (향후 구현)
+AI 집계 모듈
+
+시간 기반 집계 및 향후 AI 통합
 """
 
-# TODO: AI 집계 로직 구현
+from .window import WindowEvaluator, TransactionHistory
 
+__all__ = ["WindowEvaluator", "TransactionHistory"]

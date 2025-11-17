@@ -8,19 +8,22 @@ from __future__ import annotations
 from typing import Dict, List, Any, Optional
 from core.rules.loader import RuleLoader
 from core.data.lists import ListLoader
+from core.aggregation.window import WindowEvaluator
 
 
 class RuleEvaluator:
     """룰 평가기"""
     
-    def __init__(self, rules_path: str = "rules/tracex_rules.yaml"):
+    def __init__(self, rules_path: str = "rules/tracex_rules.yaml", window_evaluator: Optional[WindowEvaluator] = None):
         """
         Args:
             rules_path: 룰북 YAML 파일 경로
+            window_evaluator: 윈도우 평가기 (None이면 새로 생성)
         """
         self.rule_loader = RuleLoader(rules_path)
         self.list_loader = ListLoader()
         self.ruleset = self.rule_loader.load()
+        self.window_evaluator = window_evaluator or WindowEvaluator()
     
     def evaluate_single_transaction(self, tx_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
@@ -36,18 +39,37 @@ class RuleEvaluator:
         rules = self.rule_loader.get_rules()
         lists = self.list_loader.get_all_lists()
         
+        # 트랜잭션 히스토리에 추가 (윈도우 평가를 위해)
+        target_address = tx_data.get("to") or tx_data.get("target_address")
+        if target_address:
+            self.window_evaluator.history.add_transaction(target_address, tx_data)
+        
         for rule in rules:
             rule_id = rule.get("id")
             if not rule_id:
                 continue
             
-            # 룰 매칭 확인
-            if not self._match_rule(tx_data, rule, lists):
-                continue
+            # 미지원 룰 타입 건너뛰기
+            # topology, buckets, state, prerequisites 등은 아직 미구현
+            if any(key in rule for key in ["topology", "buckets", "state", "prerequisites"]):
+                continue  # 이런 룰들은 건너뛰기
             
-            # 조건 확인
-            if not self._check_conditions(tx_data, rule, lists):
-                continue
+            # 윈도우 기반 룰인지 확인
+            has_window = "window" in rule or "aggregations" in rule
+            
+            if has_window:
+                # 윈도우 기반 룰 평가
+                if not self.window_evaluator.evaluate_window_rule(tx_data, rule):
+                    continue
+            else:
+                # 단일 트랜잭션 룰 평가
+                # 룰 매칭 확인
+                if not self._match_rule(tx_data, rule, lists):
+                    continue
+                
+                # 조건 확인
+                if not self._check_conditions(tx_data, rule, lists):
+                    continue
             
             # 예외 확인
             if self._check_exceptions(tx_data, rule, lists):
@@ -55,9 +77,16 @@ class RuleEvaluator:
             
             # 룰 발동
             score = rule.get("score", 0)
+            # score가 문자열("dynamic" 등)이면 0으로 처리
+            if isinstance(score, str):
+                try:
+                    score = float(score)
+                except (ValueError, TypeError):
+                    score = 0
+            
             fired_rules.append({
                 "rule_id": rule_id,
-                "score": score,
+                "score": float(score),
                 "axis": rule.get("axis", "B"),
                 "name": rule.get("name", rule_id),
                 "severity": rule.get("severity", "MEDIUM")
@@ -137,7 +166,21 @@ class RuleEvaluator:
             list_name = spec.get("list")
             value = tx_data.get(field, "").lower() if field else ""
             target_list = lists.get(list_name, set())
-            return value in target_list
+            
+            # 리스트에 직접 있는지 확인
+            if value in target_list:
+                return True
+            
+            # 백엔드에서 제공하는 플래그 활용
+            # SDN_LIST: is_sanctioned 플래그 확인
+            if list_name == "SDN_LIST" and tx_data.get("is_sanctioned", False):
+                return True
+            
+            # MIXER_LIST: is_mixer 플래그 확인
+            if list_name == "MIXER_LIST" and tx_data.get("is_mixer", False):
+                return True
+            
+            return False
         
         return False
     
