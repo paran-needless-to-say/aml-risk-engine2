@@ -49,7 +49,8 @@ class AddressAnalyzer:
         address: str,
         chain: str,
         transactions: List[Dict[str, Any]],
-        time_range: Optional[Dict[str, str]] = None
+        time_range: Optional[Dict[str, str]] = None,
+        analysis_type: str = "basic"  # "basic" or "advanced"
     ) -> AddressAnalysisResult:
         """
         주소의 거래 히스토리를 분석하여 리스크 스코어 계산
@@ -59,6 +60,9 @@ class AddressAnalyzer:
             chain: 블록체인 (ethereum, bsc, polygon)
             transactions: 거래 히스토리 리스트 (백엔드에서 수집)
             time_range: 시간 범위 (선택사항)
+            analysis_type: 분석 타입
+                - "basic": 기본 룰만 평가 (빠름, 1-2초)
+                - "advanced": 모든 룰 평가 (느림, 5-30초, 그래프 구조 분석 포함)
         
         Returns:
             주소 분석 결과
@@ -77,12 +81,18 @@ class AddressAnalyzer:
         transaction_scores = []
         timeline = []
         
+        # 그래프 구조 분석 포함 여부 결정
+        include_topology = (analysis_type == "advanced")
+        
         for tx in sorted_txs:
             # 트랜잭션 데이터 변환
             tx_data = self._convert_transaction(tx, address)
             
-            # 룰 평가 (윈도우 룰 포함)
-            fired_rules = self.rule_evaluator.evaluate_single_transaction(tx_data)
+            # 룰 평가 (윈도우 룰 포함, 그래프 구조 분석은 옵션)
+            fired_rules = self.rule_evaluator.evaluate_single_transaction(
+                tx_data,
+                include_topology=include_topology
+            )
             
             # 트랜잭션별 점수 계산
             def safe_get_score(rule: Dict[str, Any]) -> float:

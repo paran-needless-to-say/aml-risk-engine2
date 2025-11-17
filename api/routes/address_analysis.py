@@ -129,6 +129,13 @@ def analyze_address():
                   type: string
                   format: date-time
                   example: "2024-12-31T23:59:59Z"
+            analysis_type:
+              type: string
+              enum: [basic, advanced]
+              description: 분석 타입 (기본값: basic)
+                - basic: 기본 룰만 평가 (빠름, 1-2초)
+                - advanced: 모든 룰 평가 (느림, 5-30초, 그래프 구조 분석 포함)
+              example: "basic"
     responses:
       200:
         description: 분석 성공
@@ -208,6 +215,7 @@ def analyze_address():
         
         # 선택 필드
         time_range = data.get("time_range")
+        analysis_type = data.get("analysis_type", "basic")  # 기본값: "basic"
         
         # 주소 분석 수행
         analyzer = AddressAnalyzer()
@@ -215,7 +223,8 @@ def analyze_address():
             address=address,
             chain=chain,
             transactions=transactions,
-            time_range=time_range
+            time_range=time_range,
+            analysis_type=analysis_type
         )
         
         # 기존 JSON 포맷에 맞춰 응답 생성

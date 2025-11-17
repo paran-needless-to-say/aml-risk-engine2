@@ -93,6 +93,8 @@ if __name__ == '__main__':
     print("📍 엔드포인트:")
     print("   POST http://localhost:5000/api/score/transaction")
     print("   POST http://localhost:5000/api/analyze/address")
+    print("      - analysis_type: 'basic' (기본 스코어링, 빠름, 기본값)")
+    print("      - analysis_type: 'advanced' (심층 분석, 느림)")
     print("   GET  http://localhost:5000/health")
     print()
     print("📚 API 문서:")
