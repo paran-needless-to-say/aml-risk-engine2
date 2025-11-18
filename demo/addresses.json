@@ -1,0 +1,64 @@
+{
+  "high_risk": [
+    {
+      "address": "0xhigh_risk_mixer_sanctioned",
+      "chain": "ethereum",
+      "description": "Mixer 유입 + 제재 주소 거래 + 고액 거래",
+      "expected_score": 70,
+      "expected_level": "high"
+    },
+    {
+      "address": "0xhigh_risk_repeated_large",
+      "chain": "ethereum",
+      "description": "24시간 내 반복 고액 거래 (C-004 룰)",
+      "expected_score": 60,
+      "expected_level": "high"
+    },
+    {
+      "address": "0xhigh_risk_bridge_large",
+      "chain": "ethereum",
+      "description": "브릿지 대량 거래 (B-203 룰)",
+      "expected_score": 65,
+      "expected_level": "high"
+    },
+    {
+      "address": "0xhigh_risk_scam",
+      "chain": "ethereum",
+      "description": "사기 주소와 거래 (E-103 룰)",
+      "expected_score": 60,
+      "expected_level": "high"
+    }
+  ],
+  "medium_risk": [
+    {
+      "address": "0xmedium_risk_high_value",
+      "chain": "ethereum",
+      "description": "고액 단일 거래 (7,000 USD 이상)",
+      "expected_score": 40,
+      "expected_level": "medium"
+    },
+    {
+      "address": "0xmedium_risk_burst",
+      "chain": "ethereum",
+      "description": "10분 내 3회 이상 거래 (B-101 룰)",
+      "expected_score": 35,
+      "expected_level": "medium"
+    }
+  ],
+  "low_risk": [
+    {
+      "address": "0xlow_risk_normal",
+      "chain": "ethereum",
+      "description": "정상 거래 패턴, CEX 유입",
+      "expected_score": 10,
+      "expected_level": "low"
+    },
+    {
+      "address": "0xlow_risk_small_amounts",
+      "chain": "ethereum",
+      "description": "소액 거래만 존재",
+      "expected_score": 0,
+      "expected_level": "low"
+    }
+  ]
+}

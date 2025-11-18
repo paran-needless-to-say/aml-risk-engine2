@@ -1,0 +1,62 @@
+[
+  {
+    "tx_hash": "0xtx1_repeat",
+    "chain": "ethereum",
+    "timestamp": "2025-11-17T12:26:55.228531Z",
+    "block_height": 1000,
+    "target_address": "0xhigh_risk_repeated_large",
+    "counterparty_address": "0xsource1",
+    "label": "unknown",
+    "is_sanctioned": false,
+    "is_known_scam": false,
+    "is_mixer": false,
+    "is_bridge": false,
+    "amount_usd": 3500.0,
+    "asset_contract": "0xETH"
+  },
+  {
+    "tx_hash": "0xtx2_repeat",
+    "chain": "ethereum",
+    "timestamp": "2025-11-17T16:26:55.228531Z",
+    "block_height": 2000,
+    "target_address": "0xhigh_risk_repeated_large",
+    "counterparty_address": "0xsource2",
+    "label": "unknown",
+    "is_sanctioned": false,
+    "is_known_scam": false,
+    "is_mixer": false,
+    "is_bridge": false,
+    "amount_usd": 4000.0,
+    "asset_contract": "0xETH"
+  },
+  {
+    "tx_hash": "0xtx3_repeat",
+    "chain": "ethereum",
+    "timestamp": "2025-11-17T20:26:55.228531Z",
+    "block_height": 3000,
+    "target_address": "0xhigh_risk_repeated_large",
+    "counterparty_address": "0xsource3",
+    "label": "unknown",
+    "is_sanctioned": false,
+    "is_known_scam": false,
+    "is_mixer": false,
+    "is_bridge": false,
+    "amount_usd": 3500.0,
+    "asset_contract": "0xETH"
+  },
+  {
+    "tx_hash": "0xtx4_repeat",
+    "chain": "ethereum",
+    "timestamp": "2025-11-17T23:26:55.228531Z",
+    "block_height": 3500,
+    "target_address": "0xhigh_risk_repeated_large",
+    "counterparty_address": "0xsource4",
+    "label": "unknown",
+    "is_sanctioned": false,
+    "is_known_scam": false,
+    "is_mixer": false,
+    "is_bridge": false,
+    "amount_usd": 3000.0,
+    "asset_contract": "0xETH"
+  }
+]

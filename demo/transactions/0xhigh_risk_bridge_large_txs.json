@@ -1,0 +1,32 @@
+[
+  {
+    "tx_hash": "0xtx1_bridge",
+    "chain": "ethereum",
+    "timestamp": "2025-11-17T10:00:00Z",
+    "block_height": 1000,
+    "target_address": "0xhigh_risk_bridge_large",
+    "counterparty_address": "0xbridge_contract_123",
+    "label": "bridge",
+    "is_sanctioned": false,
+    "is_known_scam": false,
+    "is_mixer": false,
+    "is_bridge": true,
+    "amount_usd": 15000.0,
+    "asset_contract": "0xETH"
+  },
+  {
+    "tx_hash": "0xtx2_bridge",
+    "chain": "ethereum",
+    "timestamp": "2025-11-17T12:00:00Z",
+    "block_height": 2000,
+    "target_address": "0xhigh_risk_bridge_large",
+    "counterparty_address": "0xbridge_contract_456",
+    "label": "bridge",
+    "is_sanctioned": false,
+    "is_known_scam": false,
+    "is_mixer": false,
+    "is_bridge": true,
+    "amount_usd": 12000.0,
+    "asset_contract": "0xETH"
+  }
+]

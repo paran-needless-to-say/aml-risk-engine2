@@ -1,0 +1,32 @@
+[
+  {
+    "tx_hash": "0xtx1_scam",
+    "chain": "ethereum",
+    "timestamp": "2025-11-17T08:00:00Z",
+    "block_height": 1000,
+    "target_address": "0xhigh_risk_scam",
+    "counterparty_address": "0xknown_scam_address",
+    "label": "unknown",
+    "is_sanctioned": false,
+    "is_known_scam": true,
+    "is_mixer": false,
+    "is_bridge": false,
+    "amount_usd": 2000.0,
+    "asset_contract": "0xETH"
+  },
+  {
+    "tx_hash": "0xtx2_scam",
+    "chain": "ethereum",
+    "timestamp": "2025-11-17T10:00:00Z",
+    "block_height": 2000,
+    "target_address": "0xhigh_risk_scam",
+    "counterparty_address": "0xanother_scam_address",
+    "label": "unknown",
+    "is_sanctioned": false,
+    "is_known_scam": true,
+    "is_mixer": false,
+    "is_bridge": false,
+    "amount_usd": 1500.0,
+    "asset_contract": "0xETH"
+  }
+]

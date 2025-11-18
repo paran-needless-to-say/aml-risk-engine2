@@ -1,0 +1,47 @@
+[
+  {
+    "tx_hash": "0xtx1_cex",
+    "chain": "ethereum",
+    "timestamp": "2025-11-15T00:27:17.865209Z",
+    "block_height": 1000,
+    "target_address": "0xlow_risk_normal",
+    "counterparty_address": "0xbinance_hot_wallet",
+    "label": "cex",
+    "is_sanctioned": false,
+    "is_known_scam": false,
+    "is_mixer": false,
+    "is_bridge": false,
+    "amount_usd": 500.0,
+    "asset_contract": "0xETH"
+  },
+  {
+    "tx_hash": "0xtx2_normal",
+    "chain": "ethereum",
+    "timestamp": "2024-01-02T10:00:00Z",
+    "block_height": 2000,
+    "target_address": "0xlow_risk_normal",
+    "counterparty_address": "0xnormal_user",
+    "label": "unknown",
+    "is_sanctioned": false,
+    "is_known_scam": false,
+    "is_mixer": false,
+    "is_bridge": false,
+    "amount_usd": 200.0,
+    "asset_contract": "0xETH"
+  },
+  {
+    "tx_hash": "0xtx3_normal",
+    "chain": "ethereum",
+    "timestamp": "2025-11-16T00:27:17.865209Z",
+    "block_height": 3000,
+    "target_address": "0xlow_risk_normal",
+    "counterparty_address": "0xanother_user",
+    "label": "unknown",
+    "is_sanctioned": false,
+    "is_known_scam": false,
+    "is_mixer": false,
+    "is_bridge": false,
+    "amount_usd": 300.0,
+    "asset_contract": "0xETH"
+  }
+]

@@ -1,0 +1,47 @@
+[
+  {
+    "tx_hash": "0xtx1_burst",
+    "chain": "ethereum",
+    "timestamp": "2025-11-18T00:16:55.228531Z",
+    "block_height": 1000,
+    "target_address": "0xmedium_risk_burst",
+    "counterparty_address": "0xsource1",
+    "label": "unknown",
+    "is_sanctioned": false,
+    "is_known_scam": false,
+    "is_mixer": false,
+    "is_bridge": false,
+    "amount_usd": 100.0,
+    "asset_contract": "0xETH"
+  },
+  {
+    "tx_hash": "0xtx2_burst",
+    "chain": "ethereum",
+    "timestamp": "2025-11-18T00:21:55.228531Z",
+    "block_height": 1001,
+    "target_address": "0xmedium_risk_burst",
+    "counterparty_address": "0xsource2",
+    "label": "unknown",
+    "is_sanctioned": false,
+    "is_known_scam": false,
+    "is_mixer": false,
+    "is_bridge": false,
+    "amount_usd": 200.0,
+    "asset_contract": "0xETH"
+  },
+  {
+    "tx_hash": "0xtx3_burst",
+    "chain": "ethereum",
+    "timestamp": "2025-11-18T00:24:55.228531Z",
+    "block_height": 1002,
+    "target_address": "0xmedium_risk_burst",
+    "counterparty_address": "0xsource3",
+    "label": "unknown",
+    "is_sanctioned": false,
+    "is_known_scam": false,
+    "is_mixer": false,
+    "is_bridge": false,
+    "amount_usd": 150.0,
+    "asset_contract": "0xETH"
+  }
+]

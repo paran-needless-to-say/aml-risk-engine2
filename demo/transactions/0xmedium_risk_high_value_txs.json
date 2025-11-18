@@ -1,0 +1,32 @@
+[
+  {
+    "tx_hash": "0xtx1_high_value",
+    "chain": "ethereum",
+    "timestamp": "2025-11-16T00:27:17.865209Z",
+    "block_height": 1000,
+    "target_address": "0xmedium_risk_high_value",
+    "counterparty_address": "0xsource1",
+    "label": "unknown",
+    "is_sanctioned": false,
+    "is_known_scam": false,
+    "is_mixer": false,
+    "is_bridge": false,
+    "amount_usd": 7500.0,
+    "asset_contract": "0xETH"
+  },
+  {
+    "tx_hash": "0xtx2_normal",
+    "chain": "ethereum",
+    "timestamp": "2024-01-02T10:00:00Z",
+    "block_height": 2000,
+    "target_address": "0xmedium_risk_high_value",
+    "counterparty_address": "0xsource2",
+    "label": "unknown",
+    "is_sanctioned": false,
+    "is_known_scam": false,
+    "is_mixer": false,
+    "is_bridge": false,
+    "amount_usd": 500.0,
+    "asset_contract": "0xETH"
+  }
+]
