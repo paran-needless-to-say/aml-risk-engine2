@@ -38,7 +38,7 @@ python3 api/app.py
       "block_height": 21039493,
       "target_address": "0xabc123...",
       "counterparty_address": "0xdef456...",
-      "entity_type": "mixer",
+      "label": "mixer",
       "is_sanctioned": true,
       "is_known_scam": false,
       "is_mixer": true,
@@ -62,7 +62,8 @@ python3 api/app.py
     { "rule_id": "E-101", "score": 25 },
     { "rule_id": "C-001", "score": 30 }
   ],
-  "explanation": "..."
+  "explanation": "...",
+  "completed_at": "2025-11-17T12:34:56Z"
 }
 ```
 
@@ -82,7 +83,7 @@ python3 api/app.py
   "block_height": 21039493,
   "target_address": "0xabc123...",
   "counterparty_address": "0xdef456...",
-  "entity_type": "mixer",
+  "label": "mixer",
   "is_sanctioned": true,
   "is_known_scam": false,
   "is_mixer": true,
@@ -104,7 +105,8 @@ python3 api/app.py
     { "rule_id": "E-101", "score": 25 },
     { "rule_id": "C-001", "score": 30 }
   ],
-  "explanation": "..."
+  "explanation": "...",
+  "completed_at": "2025-11-17T12:34:56Z"
 }
 ```
 
@@ -153,7 +155,7 @@ curl -X POST http://localhost:5000/api/score/transaction \
     "block_height": 21039493,
     "target_address": "0xabc123...",
     "counterparty_address": "0xdef456...",
-    "entity_type": "mixer",
+    "label": "mixer",
     "is_sanctioned": true,
     "is_known_scam": false,
     "is_mixer": true,

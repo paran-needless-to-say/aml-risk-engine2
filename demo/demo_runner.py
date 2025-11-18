@@ -1,11 +1,16 @@
 """
 시연용 데이터로 주소 분석 실행
 
-다양한 리스크 레벨의 주소들을 분석하여 결과 확인
+사용자가 주소 하나를 입력하면 그 주소에 대한 리스크 스코어링만 수행
+API 구조와 동일한 형식으로 출력
 
 사용법:
     프로젝트 루트에서 실행:
-    python demo/demo_runner.py
+    python demo/demo_runner.py [주소]
+    
+    예시:
+    python demo/demo_runner.py 0xhigh_risk_mixer_sanctioned
+    python demo/demo_runner.py 0xlow_risk_normal
 """
 import json
 import sys
@@ -29,112 +34,138 @@ def load_transactions(address: str) -> list:
         return json.load(f)
 
 
-def run_demo():
-    """시연 실행"""
-    print("=" * 70)
-    print("🎬 시연용 데이터 분석")
-    print("=" * 70)
-    print()
-    
-    # 주소 목록 로드
+def get_available_addresses() -> dict:
+    """사용 가능한 주소 목록 반환"""
     demo_dir = Path(__file__).parent
     addresses_file = demo_dir / "addresses.json"
     with open(addresses_file, "r", encoding="utf-8") as f:
-        addresses_data = json.load(f)
+        return json.load(f)
+
+
+def format_api_response(result) -> dict:
+    """API 응답 형식으로 변환"""
+    # fired_rules를 API 형식으로 변환 (rule_id, score만)
+    fired_rules_api = []
+    for rule in result.fired_rules:
+        if isinstance(rule, dict):
+            fired_rules_api.append({
+                "rule_id": rule.get("rule_id", ""),
+                "score": int(rule.get("score", 0))
+            })
+        else:
+            # 객체인 경우
+            fired_rules_api.append({
+                "rule_id": getattr(rule, "rule_id", ""),
+                "score": int(getattr(rule, "score", 0))
+            })
     
+    return {
+        "target_address": result.address,
+        "risk_score": int(result.risk_score),
+        "risk_level": result.risk_level,
+        "risk_tags": result.risk_tags,
+        "fired_rules": fired_rules_api,
+        "explanation": result.explanation,
+        "completed_at": result.completed_at
+    }
+
+
+def print_api_response(response: dict):
+    """API 응답 형식으로 출력"""
+    print("=" * 70)
+    print("📊 주소 리스크 분석 결과")
+    print("=" * 70)
+    print()
+    print(f"주소: {response['target_address']}")
+    print(f"리스크 스코어: {response['risk_score']}")
+    print(f"리스크 레벨: {response['risk_level']}")
+    print()
+    print(f"발동된 룰: {len(response['fired_rules'])}개")
+    for rule in response['fired_rules']:
+        print(f"  - {rule['rule_id']}: {rule['score']}점")
+    print()
+    print(f"리스크 태그: {', '.join(response['risk_tags']) if response['risk_tags'] else '없음'}")
+    print()
+    print(f"설명: {response['explanation']}")
+    print()
+    print(f"스코어링 완료 시각: {response['completed_at']}")
+    print()
+    print("=" * 70)
+
+
+def analyze_single_address(address: str, chain: str = "ethereum") -> dict:
+    """단일 주소 분석 (API와 동일한 방식)"""
+    transactions = load_transactions(address)
+    if not transactions:
+        return None
+    
+    # API와 동일한 방식으로 분석
     analyzer = AddressAnalyzer()
+    result = analyzer.analyze_address(address, chain, transactions)
     
-    # High Risk 주소 분석
-    print("🔴 High Risk 주소 분석")
-    print("-" * 70)
+    # API 응답 형식으로 변환
+    return format_api_response(result)
+
+
+def run_demo():
+    """시연 실행"""
+    # 명령줄 인자로 주소 받기
+    if len(sys.argv) > 1:
+        address = sys.argv[1]
+        chain = sys.argv[2] if len(sys.argv) > 2 else "ethereum"
+        
+        print("=" * 70)
+        print("🎬 주소 리스크 분석 (API 구조 동일)")
+        print("=" * 70)
+        print()
+        
+        # 주소 분석
+        result = analyze_single_address(address, chain)
+        
+        if result:
+            print_api_response(result)
+            print("✅ 분석 완료")
+        else:
+            print(f"❌ 오류: 주소 '{address}'의 거래 데이터를 찾을 수 없습니다.")
+            print()
+            print_available_addresses()
+    else:
+        # 주소가 없으면 사용 가능한 주소 목록 표시
+        print("=" * 70)
+        print("🎬 주소 리스크 분석 데모")
+        print("=" * 70)
+        print()
+        print("사용법: python demo/demo_runner.py [주소]")
+        print()
+        print_available_addresses()
+
+
+def print_available_addresses():
+    """사용 가능한 주소 목록 출력"""
+    addresses_data = get_available_addresses()
+    
+    print("📋 사용 가능한 데모 주소:")
+    print()
+    
+    print("🔴 High Risk:")
     for addr_info in addresses_data["high_risk"]:
-        address = addr_info["address"]
-        chain = addr_info["chain"]
-        description = addr_info["description"]
-        expected_score = addr_info["expected_score"]
-        expected_level = addr_info["expected_level"]
-        
-        transactions = load_transactions(address)
-        if not transactions:
-            print(f"  ⚠️  {address}: 거래 데이터 없음")
-            continue
-        
-        result = analyzer.analyze_address(address, chain, transactions)
-        
-        # 기존 JSON 포맷으로 출력 (시연용 - 실제 API 응답과 동일)
-        print(f"\n  주소: {address}")
-        print(f"  설명: {description} (시연용)")
-        print(f"  리스크 스코어: {int(result.risk_score)}")
-        print(f"  리스크 레벨: {result.risk_level}")
-        print(f"  발동된 룰: {len(result.fired_rules)}개")
-        for rule in result.fired_rules:
-            print(f"    - {rule['rule_id']}: {rule['score']}점")
-        print(f"  리스크 태그: {', '.join(result.risk_tags) if result.risk_tags else '없음'}")
-        print(f"  설명: {result.explanation}")
+        print(f"  - {addr_info['address']}: {addr_info['description']}")
     
     print()
-    print("🟡 Medium Risk 주소 분석")
-    print("-" * 70)
+    print("🟡 Medium Risk:")
     for addr_info in addresses_data["medium_risk"]:
-        address = addr_info["address"]
-        chain = addr_info["chain"]
-        description = addr_info["description"]
-        expected_score = addr_info["expected_score"]
-        expected_level = addr_info["expected_level"]
-        
-        transactions = load_transactions(address)
-        if not transactions:
-            print(f"  ⚠️  {address}: 거래 데이터 없음")
-            continue
-        
-        result = analyzer.analyze_address(address, chain, transactions)
-        
-        # 기존 JSON 포맷으로 출력 (시연용 - 실제 API 응답과 동일)
-        print(f"\n  주소: {address}")
-        print(f"  설명: {description} (시연용)")
-        print(f"  리스크 스코어: {int(result.risk_score)}")
-        print(f"  리스크 레벨: {result.risk_level}")
-        print(f"  발동된 룰: {len(result.fired_rules)}개")
-        for rule in result.fired_rules:
-            print(f"    - {rule['rule_id']}: {rule['score']}점")
-        print(f"  리스크 태그: {', '.join(result.risk_tags) if result.risk_tags else '없음'}")
-        print(f"  설명: {result.explanation}")
+        print(f"  - {addr_info['address']}: {addr_info['description']}")
     
     print()
-    print("🟢 Low Risk 주소 분석")
-    print("-" * 70)
+    print("🟢 Low Risk:")
     for addr_info in addresses_data["low_risk"]:
-        address = addr_info["address"]
-        chain = addr_info["chain"]
-        description = addr_info["description"]
-        expected_score = addr_info["expected_score"]
-        expected_level = addr_info["expected_level"]
-        
-        transactions = load_transactions(address)
-        if not transactions:
-            print(f"  ⚠️  {address}: 거래 데이터 없음")
-            continue
-        
-        result = analyzer.analyze_address(address, chain, transactions)
-        
-        print(f"\n  주소: {address}")
-        print(f"  설명: {description}")
-        print(f"  리스크 스코어: {result.risk_score:.1f} (예상: {expected_score})")
-        print(f"  리스크 레벨: {result.risk_level} (예상: {expected_level})")
-        print(f"  총 거래 수: {result.analysis_summary['total_transactions']}")
-        print(f"  총 거래액: ${result.analysis_summary['total_volume_usd']:,.2f}")
-        print(f"  발동된 룰: {len(result.fired_rules)}개")
-        if result.fired_rules:
-            for rule in result.fired_rules:
-                print(f"    - {rule['rule_id']}: {rule['name']} (점수: {rule['score']}, 발동: {rule['count']}회)")
-        print(f"  리스크 태그: {', '.join(result.risk_tags) if result.risk_tags else '없음'}")
+        print(f"  - {addr_info['address']}: {addr_info['description']}")
     
     print()
-    print("=" * 70)
-    print("✅ 시연 완료")
-    print("=" * 70)
+    print("예시:")
+    print("  python demo/demo_runner.py 0xhigh_risk_mixer_sanctioned")
+    print("  python demo/demo_runner.py 0xlow_risk_normal")
 
 
 if __name__ == "__main__":
     run_demo()
-

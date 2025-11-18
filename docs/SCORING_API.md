@@ -18,7 +18,7 @@ POST /api/score/transaction
   "block_height": 21039493,
   "target_address": "0xabc...",
   "counterparty_address": "0xdef...",
-  "entity_type": "mixer | bridge | cex | dex | defi | unknown",
+  "label": "mixer",
   "is_sanctioned": true,
   "is_known_scam": false,
   "is_mixer": true,
@@ -36,11 +36,11 @@ POST /api/score/transaction
 - `block_height`: 블록 높이 (정렬용)
 - `target_address`: 스코어링 대상 주소
 - `counterparty_address`: 상대방 주소 (3-hop까지 고려)
-- `entity_type`: 엔티티 타입 (백엔드에서 라벨링)
+- `label`: 엔티티 라벨 (mixer | bridge | cex | dex | defi | unknown, 백엔드에서 라벨링)
 - `is_sanctioned`: OFAC 제재 리스트 매핑 결과
 - `is_known_scam`: 사기/피싱 블랙리스트 매핑 결과
-- `is_mixer`: 믹서 여부 (entity_type에서 파생)
-- `is_bridge`: 브릿지 여부 (entity_type에서 파생)
+- `is_mixer`: 믹서 여부 (label에서 파생)
+- `is_bridge`: 브릿지 여부 (label에서 파생)
 - `amount_usd`: USD 환산 금액
 - `asset_contract`: 자산 컨트랙트 주소
 
@@ -57,7 +57,8 @@ POST /api/score/transaction
     { "rule_id": "SANCTIONED_ENTITY", "score": 40 },
     { "rule_id": "AMOUNT_OVER_1000_USD", "score": 20 }
   ],
-  "explanation": "1-hop mixer에서 1,000USD 유입, 제재 대상과 거래, 고액 거래 (1,000USD)로 인해 high로 분류됨."
+  "explanation": "1-hop mixer에서 1,000USD 유입, 제재 대상과 거래, 고액 거래 (1,000USD)로 인해 high로 분류됨.",
+  "completed_at": "2025-11-17T12:34:56Z"
 }
 ```
 
@@ -69,6 +70,7 @@ POST /api/score/transaction
 - `risk_tags`: 위험 태그 목록
 - `fired_rules`: 발동된 룰 목록 (rule_id, score)
 - `explanation`: 스코어링 결과 설명
+- `completed_at`: 스코어링 완료 시각 (ISO8601 UTC 형식)
 
 ## Risk Level 기준
 
@@ -107,7 +109,7 @@ POST /api/score/transaction
    - 태그: `bridge_large_transfer`
 
 6. **CEX_INFLOW** (10점)
-   - 조건: `entity_type == "cex"`
+   - 조건: `label == "cex"`
    - 태그: `cex_inflow`
 
 ## 사용 예시
@@ -125,7 +127,7 @@ data = {
     "block_height": 21039493,
     "target_address": "0xabc...",
     "counterparty_address": "0xdef...",
-    "entity_type": "mixer",
+    "label": "mixer",
     "is_sanctioned": True,
     "is_known_scam": False,
     "is_mixer": True,
@@ -151,7 +153,7 @@ curl -X POST http://localhost:5000/api/score/transaction \
     "block_height": 21039493,
     "target_address": "0xabc...",
     "counterparty_address": "0xdef...",
-    "entity_type": "mixer",
+    "label": "mixer",
     "is_sanctioned": true,
     "is_known_scam": false,
     "is_mixer": true,

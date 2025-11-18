@@ -10,6 +10,8 @@ demo/
 ├── transactions/                     # 각 주소의 거래 히스토리
 │   ├── 0xhigh_risk_mixer_sanctioned_txs.json
 │   ├── 0xhigh_risk_repeated_large_txs.json
+│   ├── 0xhigh_risk_bridge_large_txs.json
+│   ├── 0xhigh_risk_scam_txs.json
 │   ├── 0xmedium_risk_high_value_txs.json
 │   ├── 0xmedium_risk_burst_txs.json
 │   ├── 0xlow_risk_normal_txs.json
@@ -31,8 +33,22 @@ demo/
    - 예상 레벨: high
 
 2. **0xhigh_risk_repeated_large**
+
    - 24시간 내 반복 고액 거래
    - C-004 룰 발동 (sum >= 10,000, count >= 3, every >= 3,000)
+   - 예상 스코어: 60-80
+   - 예상 레벨: high
+
+3. **0xhigh_risk_bridge_large**
+
+   - 브릿지 대량 거래 (15,000 USD 이상)
+   - B-203 룰 발동 (Fan-out)
+   - 예상 스코어: 60-70
+   - 예상 레벨: high
+
+4. **0xhigh_risk_scam**
+   - 사기 주소와 거래
+   - E-103 룰 발동 (Known Scam)
    - 예상 스코어: 60-80
    - 예상 레벨: high
 
@@ -68,13 +84,52 @@ demo/
 
 ## 🚀 사용 방법
 
-### 시연 실행
+### 시연 실행 (주소 하나씩 분석)
+
+데모는 실제 API와 동일하게 **주소 하나를 입력받아 해당 주소의 리스크 스코어만 분석**합니다.
+
+#### 사용 가능한 주소 목록 확인
 
 ```bash
 python demo/demo_runner.py
 ```
 
-### 개별 주소 분석
+#### 주소 하나 분석
+
+```bash
+# High Risk 주소 예시
+python demo/demo_runner.py 0xhigh_risk_mixer_sanctioned
+python demo/demo_runner.py 0xhigh_risk_repeated_large
+python demo/demo_runner.py 0xhigh_risk_bridge_large
+python demo/demo_runner.py 0xhigh_risk_scam
+
+# Medium Risk 주소 예시
+python demo/demo_runner.py 0xmedium_risk_high_value
+python demo/demo_runner.py 0xmedium_risk_burst
+
+# Low Risk 주소 예시
+python demo/demo_runner.py 0xlow_risk_normal
+python demo/demo_runner.py 0xlow_risk_small_amounts
+```
+
+#### 출력 형식
+
+데모는 실제 API 응답과 동일한 형식으로 출력합니다:
+
+```
+주소: 0xhigh_risk_mixer_sanctioned
+리스크 스코어: 40
+리스크 레벨: medium
+발동된 룰: 5개
+  - C-001: 30점
+  - E-101: 25점
+  ...
+리스크 태그: high_value_transfer, mixer_inflow, sanction_exposure
+설명: ...
+스코어링 완료 시각: 2025-11-18T07:04:26.460756Z
+```
+
+### 프로그래밍 방식으로 분석
 
 ```python
 from core.scoring.address_analyzer import AddressAnalyzer
@@ -94,6 +149,7 @@ result = analyzer.analyze_address(
 
 print(f"리스크 스코어: {result.risk_score}")
 print(f"리스크 레벨: {result.risk_level}")
+print(f"스코어링 완료 시각: {result.completed_at}")
 ```
 
 ### API 테스트
@@ -111,6 +167,8 @@ curl -X POST http://localhost:5000/api/analyze/address \
 | ---------------------------- | ------------- | ----------- | ------------------- |
 | 0xhigh_risk_mixer_sanctioned | 70-90         | high        | E-101, C-001, C-003 |
 | 0xhigh_risk_repeated_large   | 60-80         | high        | C-004               |
+| 0xhigh_risk_bridge_large     | 60-70         | high        | B-203               |
+| 0xhigh_risk_scam             | 60-80         | high        | E-103               |
 | 0xmedium_risk_high_value     | 20-40         | medium      | C-003               |
 | 0xmedium_risk_burst          | 15-35         | medium      | B-101               |
 | 0xlow_risk_normal            | 0-20          | low         | 없음 또는 CEX 관련  |
