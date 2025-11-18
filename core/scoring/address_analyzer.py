@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import defaultdict
 
 from ..rules.evaluator import RuleEvaluator
@@ -27,6 +27,7 @@ class AddressAnalysisResult:
     transaction_patterns: Dict[str, Any]
     timeline: List[Dict[str, Any]] = field(default_factory=list)
     explanation: str = ""  # 리스크 스코어 설명
+    completed_at: str = ""  # ISO8601 UTC 형식의 스코어링 완료 시각
 
 
 class AddressAnalyzer:
@@ -145,6 +146,9 @@ class AddressAnalyzer:
             aggregated_rules, risk_tags, final_score, risk_level
         )
         
+        # 완료 시각 생성
+        completed_at = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+        
         return AddressAnalysisResult(
             address=address,
             chain=chain,
@@ -155,7 +159,8 @@ class AddressAnalyzer:
             risk_tags=risk_tags,
             transaction_patterns=patterns,
             timeline=timeline,
-            explanation=explanation
+            explanation=explanation,
+            completed_at=completed_at
         )
     
     def _convert_transaction(
@@ -181,7 +186,7 @@ class AddressAnalyzer:
             "is_known_scam": tx.get("is_known_scam", False),
             "is_mixer": tx.get("is_mixer", False),
             "is_bridge": tx.get("is_bridge", False),
-            "entity_type": tx.get("entity_type", "unknown"),
+            "label": tx.get("label", tx.get("entity_type", "unknown")),  # entity_type -> label로 변경
             "asset_contract": tx.get("asset_contract", ""),
         }
     

@@ -34,7 +34,7 @@ def score_transaction():
             - block_height
             - target_address
             - counterparty_address
-            - entity_type
+            - label
             - is_sanctioned
             - is_known_scam
             - is_mixer
@@ -65,10 +65,10 @@ def score_transaction():
               type: string
               description: 타겟주소와 거래한 상대방 주소
               example: "0xdef456..."
-            entity_type:
+            label:
               type: string
               enum: [mixer, bridge, cex, dex, defi, unknown]
-              description: 라벨 붙이는 거 백엔드가?
+              description: 엔티티 라벨 (백엔드에서 라벨링)
               example: "mixer"
             is_sanctioned:
               type: boolean
@@ -80,11 +80,11 @@ def score_transaction():
               example: false
             is_mixer:
               type: boolean
-              description: entity_type에서 파생되는 사실 정보
+              description: label에서 파생되는 사실 정보
               example: true
             is_bridge:
               type: boolean
-              description: entity_type에서 파생되는 사실 정보
+              description: label에서 파생되는 사실 정보
               example: false
             amount_usd:
               type: number
@@ -137,6 +137,11 @@ def score_transaction():
             explanation:
               type: string
               example: "1-hop sanctioned mixer에서 1,000USD 이상 유입된 거래로, 세탁 자금 유입 패턴에 해당하여 high로 분류됨."
+            completed_at:
+              type: string
+              format: date-time
+              description: 스코어링 완료 시각 (ISO8601 UTC)
+              example: "2025-11-17T12:34:56Z"
       400:
         description: 잘못된 요청
         schema:
@@ -169,7 +174,7 @@ def score_transaction():
                 block_height=data["block_height"],
                 target_address=data["target_address"],
                 counterparty_address=data["counterparty_address"],
-                entity_type=data["entity_type"],
+                label=data.get("label", data.get("entity_type", "unknown")),  # label로 변경, 하위 호환성 유지
                 is_sanctioned=data["is_sanctioned"],
                 is_known_scam=data["is_known_scam"],
                 is_mixer=data["is_mixer"],
@@ -194,7 +199,8 @@ def score_transaction():
                 {"rule_id": rule.rule_id, "score": int(rule.score)}  # 정수로 변환
                 for rule in result.fired_rules
             ],
-            "explanation": result.explanation
+            "explanation": result.explanation,
+            "completed_at": result.completed_at
         }), 200
     
     except Exception as e:

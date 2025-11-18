@@ -58,7 +58,7 @@ def analyze_address():
                   - block_height
                   - target_address
                   - counterparty_address
-                  - entity_type
+                  - label
                   - is_sanctioned
                   - is_known_scam
                   - is_mixer
@@ -89,9 +89,10 @@ def analyze_address():
                     type: string
                     description: 상대방 주소
                     example: "0xdef456..."
-                  entity_type:
+                  label:
                     type: string
                     enum: [mixer, bridge, cex, dex, defi, unknown]
+                    description: 엔티티 라벨 (백엔드에서 라벨링, 이전 entity_type)
                     example: "mixer"
                   is_sanctioned:
                     type: boolean
@@ -103,11 +104,11 @@ def analyze_address():
                     example: false
                   is_mixer:
                     type: boolean
-                    description: entity_type에서 파생
+                    description: label에서 파생
                     example: true
                   is_bridge:
                     type: boolean
-                    description: entity_type에서 파생
+                    description: label에서 파생
                     example: false
                   amount_usd:
                     type: number
@@ -179,6 +180,11 @@ def analyze_address():
             explanation:
               type: string
               example: "1-hop sanctioned mixer에서 1,000USD 이상 유입된 거래로, 세탁 자금 유입 패턴에 해당하여 high로 분류됨."
+            completed_at:
+              type: string
+              format: date-time
+              description: 스코어링 완료 시각 (ISO8601 UTC)
+              example: "2025-11-17T12:34:56Z"
       400:
         description: 잘못된 요청
         schema:
@@ -234,7 +240,8 @@ def analyze_address():
             "risk_level": result.risk_level,
             "risk_tags": result.risk_tags,
             "fired_rules": result.fired_rules,  # {rule_id, score} 형태
-            "explanation": result.explanation
+            "explanation": result.explanation,
+            "completed_at": result.completed_at
         }), 200
     
     except Exception as e:

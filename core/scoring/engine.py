@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Dict, List, Any, Optional
+from datetime import datetime, timezone
 
 from core.rules.evaluator import RuleEvaluator
 from core.data.lists import ListLoader
@@ -21,7 +22,7 @@ class TransactionInput:
     block_height: int
     target_address: str
     counterparty_address: str
-    entity_type: str  # mixer | bridge | cex | dex | defi | unknown
+    label: str  # mixer | bridge | cex | dex | defi | unknown (이전 entity_type)
     is_sanctioned: bool
     is_known_scam: bool
     is_mixer: bool
@@ -46,6 +47,7 @@ class ScoringResult:
     risk_tags: List[str]
     fired_rules: List[FiredRule]
     explanation: str
+    completed_at: str  # ISO8601 UTC 형식의 스코어링 완료 시각
 
 
 class TransactionScorer:
@@ -93,13 +95,17 @@ class TransactionScorer:
         # 7. Explanation 생성
         explanation = self._generate_explanation(tx_input, rule_results, risk_level)
         
+        # 8. 완료 시각 생성
+        completed_at = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+        
         return ScoringResult(
             target_address=tx_input.target_address,
             risk_score=risk_score,
             risk_level=risk_level,
             risk_tags=risk_tags,
             fired_rules=fired_rules,
-            explanation=explanation
+            explanation=explanation,
+            completed_at=completed_at
         )
     
     def _convert_to_rule_data(self, tx: TransactionInput) -> Dict[str, Any]:
@@ -121,15 +127,25 @@ class TransactionScorer:
             "is_known_scam": tx.is_known_scam,
             "is_mixer": tx.is_mixer,
             "is_bridge": tx.is_bridge,
-            "entity_type": tx.entity_type,
+            "label": tx.label,  # 이전 entity_type
             "asset_contract": tx.asset_contract,
         }
     
     def _calculate_risk_score(self, rule_results: List[Dict[str, Any]]) -> float:
         """룰 결과를 기반으로 리스크 점수 계산"""
-        total_score = sum(r.get("score", 0) for r in rule_results)
-        # 0~100 범위로 정규화 (최대 점수는 룰북에 따라 조정)
-        return min(100.0, total_score)
+        # AI 기반 가중치 학습기 사용 (선택적)
+        try:
+            from .ai_weight_learner import RuleWeightLearner
+            if not hasattr(self, '_weight_learner'):
+                self._weight_learner = RuleWeightLearner(use_ai=False)  # 규칙 기반으로 시작
+            
+            # 가중치 적용 점수 계산
+            return self._weight_learner.calculate_weighted_score(rule_results)
+        except (ImportError, AttributeError):
+            # AI 모듈이 없으면 기본 방식 사용
+            total_score = sum(r.get("score", 0) for r in rule_results)
+            # 0~100 범위로 정규화 (최대 점수는 룰북에 따라 조정)
+            return min(100.0, total_score)
     
     def _determine_risk_level(self, score: float) -> str:
         """점수 기반 리스크 레벨 결정"""
