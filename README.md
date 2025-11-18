@@ -136,8 +136,24 @@ POST /api/analyze/address
 {
   "address": "0xABC123...",
   "chain": "ethereum",
-  "transactions": [...],
-  "analysis_type": "basic"  // 기본값: "basic"
+  "transactions": [
+    {
+      "tx_hash": "0x123...",
+      "chain": "ethereum",
+      "timestamp": "2025-11-17T12:34:56Z",
+      "block_height": 21039493,
+      "target_address": "0xABC123...",
+      "counterparty_address": "0xDEF456...",
+      "label": "mixer",
+      "is_sanctioned": true,
+      "is_known_scam": false,
+      "is_mixer": true,
+      "is_bridge": false,
+      "amount_usd": 123.45,
+      "asset_contract": "0xETH"
+    }
+  ],
+  "analysis_type": "basic"
 }
 ```
 
@@ -153,7 +169,8 @@ POST /api/analyze/address
     { "rule_id": "C-001", "score": 30 },
     { "rule_id": "E-101", "score": 15 }
   ],
-  "explanation": "..."
+  "explanation": "...",
+  "completed_at": "2025-11-18T07:04:26.460756Z"
 }
 ```
 
@@ -169,8 +186,24 @@ POST /api/analyze/address
 {
   "address": "0xABC123...",
   "chain": "ethereum",
-  "transactions": [...],  // 3홉 데이터 포함 권장
-  "analysis_type": "advanced"  // 심층 분석
+  "transactions": [
+    {
+      "tx_hash": "0x123...",
+      "chain": "ethereum",
+      "timestamp": "2025-11-17T12:34:56Z",
+      "block_height": 21039493,
+      "target_address": "0xABC123...",
+      "counterparty_address": "0xDEF456...",
+      "label": "mixer",
+      "is_sanctioned": true,
+      "is_known_scam": false,
+      "is_mixer": true,
+      "is_bridge": false,
+      "amount_usd": 123.45,
+      "asset_contract": "0xETH"
+    }
+  ],
+  "analysis_type": "advanced"
 }
 ```
 
@@ -185,10 +218,11 @@ POST /api/analyze/address
   "fired_rules": [
     { "rule_id": "C-001", "score": 30 },
     { "rule_id": "E-101", "score": 15 },
-    { "rule_id": "B-201", "score": 25 }, // 그래프 구조 분석 결과
+    { "rule_id": "B-201", "score": 25 },
     { "rule_id": "B-202", "score": 30 }
   ],
-  "explanation": "..."
+  "explanation": "...",
+  "completed_at": "2025-11-18T07:04:26.460756Z"
 }
 ```
 
@@ -196,6 +230,43 @@ POST /api/analyze/address
 
 ```bash
 POST /api/score/transaction
+```
+
+**Request:**
+
+```json
+{
+  "tx_hash": "0x123...",
+  "chain": "ethereum",
+  "timestamp": "2025-11-17T12:34:56Z",
+  "block_height": 21039493,
+  "target_address": "0xABC123...",
+  "counterparty_address": "0xDEF456...",
+  "label": "mixer",
+  "is_sanctioned": true,
+  "is_known_scam": false,
+  "is_mixer": true,
+  "is_bridge": false,
+  "amount_usd": 123.45,
+  "asset_contract": "0xETH"
+}
+```
+
+**Response:**
+
+```json
+{
+  "target_address": "0xABC123...",
+  "risk_score": 78,
+  "risk_level": "high",
+  "risk_tags": ["mixer_inflow", "sanction_exposure"],
+  "fired_rules": [
+    { "rule_id": "E-101", "score": 25 },
+    { "rule_id": "C-001", "score": 30 }
+  ],
+  "explanation": "...",
+  "completed_at": "2025-11-18T07:04:26.460756Z"
+}
 ```
 
 자세한 내용은 `docs/API_DOCUMENTATION.md` 참고
