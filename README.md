@@ -58,7 +58,7 @@ python3 run_server.py
 
 **엔드포인트**: `POST /api/analyze/address`
 
-**요청 예시**:
+**요청 예시** (최소 필수 필드):
 
 ```json
 {
@@ -79,24 +79,39 @@ python3 run_server.py
       "is_bridge": false,
       "amount_usd": 5000.0,
       "asset_contract": "0xETH"
-    },
+    }
+  ]
+}
+```
+
+**요청 예시** (선택 필드 포함):
+
+```json
+{
+  "address": "0xhigh_risk_mixer_sanctioned",
+  "chain_id": 1,
+  "transactions": [
     {
-      "tx_hash": "0xtx2_sanctioned",
+      "tx_hash": "0xtx1_mixer",
       "chain_id": 1,
-      "timestamp": "2024-01-01T10:30:00Z",
-      "block_height": 1001,
+      "timestamp": "2025-11-15T00:27:17.865209Z",
+      "block_height": 1000,
       "target_address": "0xhigh_risk_mixer_sanctioned",
-      "counterparty_address": "0xsanctioned_address_ofac",
-      "label": "unknown",
-      "is_sanctioned": true,
+      "counterparty_address": "0xmixer_service_123",
+      "label": "mixer",
+      "is_sanctioned": false,
       "is_known_scam": false,
-      "is_mixer": false,
+      "is_mixer": true,
       "is_bridge": false,
-      "amount_usd": 3000.0,
+      "amount_usd": 5000.0,
       "asset_contract": "0xETH"
     }
   ],
-  "analysis_type": "basic"
+  "analysis_type": "basic",
+  "time_range": {
+    "start": "2024-01-01T00:00:00Z",
+    "end": "2024-12-31T23:59:59Z"
+  }
 }
 ```
 
@@ -176,14 +191,31 @@ python3 run_server.py
 }
 ```
 
+### 필수 필드
+
+- `address`: 분석 대상 주소
+- `chain_id`: 체인 ID (숫자 형식, 예: 1, 42161, 43114)
+- `transactions`: 거래 히스토리 배열
+  - 각 트랜잭션 객체에도 `chain_id`가 필요하며 숫자 형식이어야 합니다
+  - 각 트랜잭션의 필수 필드: `tx_hash`, `chain_id`, `timestamp`, `block_height`, `target_address`, `counterparty_address`, `label`, `is_sanctioned`, `is_known_scam`, `is_mixer`, `is_bridge`, `amount_usd`, `asset_contract`
+
+### 선택 필드
+
+- `analysis_type`: 분석 타입
+  - `"basic"` (기본값): 빠른 분석 (1-2초), 기본 룰만 평가
+  - `"advanced"`: 정밀 분석 (5-30초), 모든 룰 평가 (그래프 구조 분석 포함)
+- `time_range`: 시간 범위 필터링
+  - `start`: 시작 시간 (ISO8601 UTC 형식)
+  - `end`: 종료 시간 (ISO8601 UTC 형식)
+  - 예: `{"start": "2024-01-01T00:00:00Z", "end": "2024-12-31T23:59:59Z"}`
+
 ### 중요 사항
 
 1. **chain_id는 숫자 형식**: `1` (Ethereum), `42161` (Arbitrum), `43114` (Avalanche) 등
 2. **transactions 배열 내부도 chain_id 숫자**: 각 트랜잭션 객체에도 `chain_id`가 필요하며 숫자 형식이어야 합니다
-3. **필수 필드**: `address`, `chain_id`, `transactions` (주소 분석 API의 경우)
-4. **선택 필드**: `analysis_type` (기본값: "basic"), `time_range`
+3. **time_range 사용 시**: 백엔드에서 해당 시간 범위의 트랜잭션만 필터링해서 보내야 합니다
 
-자세한 내용은 `docs/API_DOCUMENTATION.md`와 `docs/CORRECT_INPUT_FORMAT.md`를 참고하세요.
+자세한 내용은 `docs/API_DOCUMENTATION.md`, `docs/CORRECT_INPUT_FORMAT.md`, `docs/OPTIONAL_FIELDS_EXPLANATION.md`를 참고하세요.
 
 ---
 
