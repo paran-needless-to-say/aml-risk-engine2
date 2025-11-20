@@ -1,45 +1,24 @@
 # 문서 가이드
 
-## 📚 핵심 문서 (18개)
+## 📚 핵심 문서 (7개)
 
 ### 1. 프로젝트 개요
 
 - **README.md** (프로젝트 루트) - 프로젝트 전체 개요 및 빠른 시작
+- **PROJECT_INTRODUCTION.md** - 프로젝트 상세 소개 및 차별성
 - **SYSTEM_OVERVIEW.md** - 시스템 개요 및 아키텍처
 
-### 2. 구현 현황
+### 2. 논문
 
-- **IMPLEMENTED_RULES_SUMMARY.md** - 현재 구현된 룰 요약 ⭐
-- **RISK_SCORING_IMPLEMENTATION_STATUS.md** - 상세 구현 현황
-- **UNIMPLEMENTED_RULES_SUMMARY.md** - 미구현 룰 요약
+- **PAPER_KR.md** - 논문 (한국어) ⭐
+- **PAPER.md** - 논문 (영어)
+- **MPOCryptoML.pdf** - 참고 논문 PDF
 
 ### 3. API 문서
 
 - **API_DOCUMENTATION.md** - 전체 API 문서
-- **SCORING_API.md** - 스코어링 API 상세
-
-### 4. AI 및 최적화
-
-- **AI_WEIGHT_LEARNING.md** - AI 기반 가중치 학습 가이드 ⭐
-- **AI_WORK_MANAGEMENT.md** - AI 작업 관리 가이드
-- **RISK_SCORING_OPTIMIZATION.md** - 스코어링 최적화 가이드
-
-### 5. 데이터 수집 및 학습
-
-- **DATA_COLLECTION_GUIDE.md** - 실제 데이터 수집 가이드 ⭐
-- **DATA_STORAGE_LOCATION.md** - 데이터 저장 위치 가이드
-- **DATASET_BUILDING_GUIDE.md** - 데이터셋 구축 가이드
-- **ETHERSCAN_TAGS.md** - Etherscan 태그 활용 가이드
-
-### 6. 룰 설명
-
-- **TRACEX_RULES_EXPLAINED.md** - TRACE-X 룰 설명
-
-### 7. 참고 문서
-
-- **SDN_LIST_GUIDE.md** - OFAC SDN 리스트 활용 가이드
-- **ADDRESS_METADATA_STORAGE_IMPLEMENTATION.md** - 주소 메타데이터 저장소 (미구현 룰용)
-- **WHY_ADDRESS_METADATA_STORAGE.md** - 메타데이터 저장소 필요 이유
+- **RISK_SCORING_IO.md** - 리스크 스코어링 엔진 입출력 명세 ⭐
+- **DEPLOYMENT_GUIDE.md** - 배포 가이드 (백엔드 팀용) ⭐
 
 ---
 
@@ -48,35 +27,27 @@
 ### 빠른 시작
 
 1. **README.md** (프로젝트 루트) - 프로젝트 개요
-2. **IMPLEMENTED_RULES_SUMMARY.md** - 구현된 룰 확인
-3. **DATA_COLLECTION_GUIDE.md** - 데이터 수집 시작
+2. **PROJECT_INTRODUCTION.md** - 프로젝트 상세 소개
+3. **SYSTEM_OVERVIEW.md** - 시스템 아키텍처 이해
+4. **API_DOCUMENTATION.md** - API 사용 방법
 
-### AI 학습
+### 논문 읽기
 
-1. **AI_WEIGHT_LEARNING.md** - AI 학습 개념
-2. **AI_WORK_MANAGEMENT.md** - 작업 관리
-3. **DATASET_BUILDING_GUIDE.md** - 데이터셋 구축
-
-### API 사용
-
-1. **API_DOCUMENTATION.md** - 전체 API
-2. **SCORING_API.md** - 스코어링 API 상세
+1. **PAPER_KR.md** - 한국어 논문 (상세한 실험 결과 및 분석)
+2. **PAPER.md** - 영어 논문 (국제 학회 제출용)
 
 ---
 
-## 🗑️ 정리 완료
+## 📁 Archive 폴더
 
-**47개 → 18개** 문서로 정리 완료
+상세한 구현 가이드 및 참고 문서는 `archive/` 폴더에 보관되어 있습니다:
 
-### 삭제된 문서
+- AI 학습 관련 가이드
+- 데이터 수집 및 구축 가이드
+- 룰 구현 상세 설명
+- 기술적 세부사항
 
-- MPOCRYPTML 관련 문서 (4개)
-- NEXT_STEPS 관련 문서 (2개)
-- UNIMPLEMENTED_RULES 중복 (1개)
-- WHY\_\* 중복 (2개)
-- 구조 관련 중복 (4개)
-- 기술 상세 문서 (6개)
-- 기타 중복 문서 (9개)
+필요 시 참고하세요.
 
 ---
 
@@ -84,10 +55,14 @@
 
 ### ⭐ 필수 읽기
 
-1. **IMPLEMENTED_RULES_SUMMARY.md** - 현재 구현 상태
-2. **DATA_COLLECTION_GUIDE.md** - 데이터 수집 방법
-3. **AI_WEIGHT_LEARNING.md** - AI 학습 방법
+1. **PROJECT_INTRODUCTION.md** - 프로젝트 이해
+2. **SYSTEM_OVERVIEW.md** - 시스템 구조 이해
+3. **API_DOCUMENTATION.md** - API 사용
 
-### 📖 참고용
+### 📖 논문
 
-- 나머지 문서들은 필요 시 참고
+- **PAPER_KR.md** - 완성된 논문 (실험 결과 포함)
+
+---
+
+**35개 → 9개** 핵심 문서로 정리 완료

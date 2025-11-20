@@ -1,0 +1,176 @@
+# 리스크 스코어링 엔진 입출력 명세
+
+## 📥 입력 (Input)
+
+### TransactionInput
+
+리스크 스코어링 엔진은 단일 트랜잭션 정보를 입력으로 받습니다.
+
+```python
+@dataclass
+class TransactionInput:
+    tx_hash: str                    # 트랜잭션 해시
+    chain_id: int                   # 체인 ID (예: 1=Ethereum, 42161=Arbitrum, 43114=Avalanche)
+    timestamp: str                  # ISO8601 UTC 형식 (예: "2025-11-17T12:34:56Z")
+    block_height: int               # 블록 높이 (정렬용)
+    target_address: str             # 스코어링 대상 주소 (점수를 매기려는 기준 주소)
+    counterparty_address: str        # 상대방 주소 (target_address와 거래한 주소)
+    label: str                      # 엔티티 라벨: "mixer" | "bridge" | "cex" | "dex" | "defi" | "unknown"
+    is_sanctioned: bool             # OFAC/제재 리스트 매핑 결과 (팩트)
+    is_known_scam: bool             # Scam/phishing 블랙리스트 매핑 (팩트)
+    is_mixer: bool                  # label에서 파생되는 사실 정보
+    is_bridge: bool                 # label에서 파생되는 사실 정보
+    amount_usd: float               # 시세 기반 환산 금액 (USD)
+    asset_contract: str             # 자산 종류 (Ethereum native, ERC-20 등)
+```
+
+### JSON 요청 예시
+
+```json
+{
+  "tx_hash": "0x123...",
+  "chain_id": 1,
+  "timestamp": "2025-11-17T12:34:56Z",
+  "block_height": 21039493,
+  "target_address": "0xabc123...",
+  "counterparty_address": "0xdef456...",
+  "label": "mixer",
+  "is_sanctioned": true,
+  "is_known_scam": false,
+  "is_mixer": true,
+  "is_bridge": false,
+  "amount_usd": 123.45,
+  "asset_contract": "0x..."
+}
+```
+
+---
+
+## 📤 출력 (Output)
+
+### ScoringResult
+
+리스크 스코어링 엔진은 다음 정보를 반환합니다.
+
+```python
+@dataclass
+class ScoringResult:
+    target_address: str             # 스코어링 대상 주소
+    risk_score: float               # 리스크 점수 (0~100)
+    risk_level: str                 # 리스크 레벨: "low" | "medium" | "high" | "critical"
+    risk_tags: List[str]            # 리스크 태그 목록
+    fired_rules: List[FiredRule]   # 발동된 룰 목록
+    explanation: str                # 설명 텍스트
+    completed_at: str               # 스코어링 완료 시각 (ISO8601 UTC)
+    # 백엔드 요구 필드
+    timestamp: str                  # 트랜잭션 타임스탬프 (ISO8601 UTC)
+    chain_id: int                   # 체인 ID (예: 1=Ethereum, 42161=Arbitrum)
+    value: float                    # 거래 금액 (USD, amount_usd와 동일)
+```
+
+### FiredRule
+
+```python
+@dataclass
+class FiredRule:
+    rule_id: str                    # 룰 ID (예: "E-101", "C-001")
+    score: float                     # 해당 룰이 기여한 점수
+```
+
+### JSON 응답 예시
+
+```json
+{
+  "target_address": "0xabc123...",
+  "risk_score": 78,
+  "risk_level": "high",
+  "risk_tags": ["mixer_inflow", "sanction_exposure", "high_value_transfer"],
+  "fired_rules": [
+    {
+      "rule_id": "E-101",
+      "score": 25
+    },
+    {
+      "rule_id": "C-001",
+      "score": 30
+    }
+  ],
+  "explanation": "1-hop sanctioned mixer에서 1,000USD 이상 유입된 거래로, 세탁 자금 유입 패턴에 해당하여 high로 분류됨.",
+  "completed_at": "2025-11-17T12:34:56Z",
+  "timestamp": "2025-11-19T10:00:00Z",
+  "chain_id": 1,
+  "value": 500000.0
+}
+```
+
+---
+
+## 🎯 리스크 레벨 매핑
+
+리스크 점수에 따른 레벨 분류:
+
+- **Low**: 0-29
+- **Medium**: 30-59
+- **High**: 60-79
+- **Critical**: 80-100
+
+---
+
+## 📋 Risk Tags 종류
+
+가능한 리스크 태그들:
+
+- `mixer_inflow` - 믹서에서 유입
+- `sanction_exposure` - 제재 대상과 거래
+- `scam_exposure` - 사기 주소와 거래
+- `high_value_transfer` - 고액 거래
+- `bridge_large_transfer` - 브릿지를 통한 대규모 거래
+- `cex_inflow` - 중앙화 거래소 유입
+
+---
+
+## 🔄 처리 흐름
+
+1. **입력 검증**: 필수 필드 확인
+2. **룰 평가**: TRACE-X 룰북 기반 규칙 평가
+3. **점수 계산**: 발동된 룰들의 점수 합산 (0~100 범위)
+4. **레벨 결정**: 점수 기반 리스크 레벨 결정
+5. **태그 생성**: 발동된 룰 기반 리스크 태그 생성
+6. **설명 생성**: 사용자 친화적 설명 텍스트 생성
+7. **결과 반환**: JSON 형식으로 결과 반환
+
+---
+
+## 📡 API 엔드포인트
+
+### 단일 트랜잭션 스코어링
+
+```
+POST /api/score/transaction
+```
+
+### 주소 분석 (다중 트랜잭션)
+
+```
+POST /api/analyze/address
+```
+
+입력: `address`, `chain_id` (숫자), `transactions[]` (TransactionInput 배열)
+
+---
+
+## 💡 참고사항
+
+- `risk_score`는 0~100 사이의 연속값입니다 (정수로 반환)
+- `timestamp`와 `completed_at`은 ISO8601 UTC 형식을 사용합니다
+- `label`은 백엔드에서 사전 라벨링된 정보입니다
+- `is_sanctioned`, `is_known_scam` 등은 팩트 정보로, 룰 평가에 직접 사용됩니다
+- `value`는 `amount_usd`와 동일한 값입니다 (거래 금액 USD)
+- `chain_id`는 숫자로 받으며, 내부적으로 체인 이름으로 변환됩니다:
+  - `1` → "ethereum" (Ethereum Mainnet)
+  - `42161` → "arbitrum" (Arbitrum One)
+  - `43114` → "avalanche" (Avalanche C-Chain)
+  - `8453` → "base" (Base Mainnet)
+  - `137` → "polygon" (Polygon Mainnet)
+  - `56` → "bsc" (BSC Mainnet)
+  - 기타: 기본값 "ethereum"

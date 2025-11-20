@@ -29,14 +29,14 @@ python3 api/app.py
 ```json
 {
   "address": "0xabc123...",
-  "chain": "ethereum",
+  "chain_id": 1,
   "transactions": [
     {
       "tx_hash": "string",
-      "chain": "string",
+      "chain_id": 1,
       "timestamp": "2025-11-17T12:34:56Z",
       "block_height": 21039493,
-      "target_address": "0xabc123...",
+      "target_address": "0xabc123...", // 각 트랜잭션의 스코어링 대상 주소 (필수)
       "counterparty_address": "0xdef456...",
       "label": "mixer",
       "is_sanctioned": true,
@@ -78,7 +78,7 @@ python3 api/app.py
 ```json
 {
   "tx_hash": "string",
-  "chain": "ethereum",
+  "chain_id": 1,
   "timestamp": "2025-11-17T12:34:56Z",
   "block_height": 21039493,
   "target_address": "0xabc123...",
@@ -150,7 +150,7 @@ curl -X POST http://localhost:5000/api/score/transaction \
   -H "Content-Type: application/json" \
   -d '{
     "tx_hash": "0x123...",
-    "chain": "ethereum",
+    "chain_id": 1,
     "timestamp": "2025-11-17T12:34:56Z",
     "block_height": 21039493,
     "target_address": "0xabc123...",

@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>암호화폐 주소 리스크 분석 - 그래프 시각화</title>
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background: #f5f5f5;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .top-bar {
+        background: white;
+        padding: 15px 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      .search-section {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .search-input {
+        flex: 1;
+        padding: 10px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+
+      .search-input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .search-btn {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .search-btn:hover {
+        background: #5568d3;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .toolbar-btn {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 4px;
+        color: #666;
+      }
+
+      .toolbar-btn:hover {
+        background: #f0f0f0;
+      }
+
+      .main-container {
+        display: flex;
+        height: calc(100vh - 60px);
+      }
+
+      .graph-container {
+        flex: 1;
+        background: white;
+        position: relative;
+      }
+
+      #graph-network {
+        width: 100%;
+        height: 100%;
+      }
+
+      .info-panel {
+        width: 500px;
+        background: white;
+        border-left: 1px solid #e0e0e0;
+        overflow-y: auto;
+        padding: 24px;
+        font-size: 14px;
+      }
+
+      .info-panel.hidden {
+        display: none;
+      }
+
+      .info-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f0f0f0;
+      }
+
+      .info-header h2 {
+        font-size: 18px;
+        color: #333;
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #999;
+      }
+
+      .close-btn:hover {
+        color: #333;
+      }
+
+      .address-display {
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        color: #667eea;
+        margin-bottom: 15px;
+        word-break: break-all;
+      }
+
+      .risk-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 15px;
+      }
+
+      .risk-badge.low {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+
+      .risk-badge.medium {
+        background: #fff3e0;
+        color: #e65100;
+      }
+
+      .risk-badge.high {
+        background: #fce4ec;
+        color: #c2185b;
+      }
+
+      .risk-badge.critical {
+        background: #ffebee;
+        color: #c62828;
+      }
+
+      .info-section {
+        margin-bottom: 20px;
+      }
+
+      .info-section h3 {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+      }
+
+      .info-value {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .info-item {
+        background: #f8f9fa;
+        padding: 12px;
+        border-radius: 8px;
+      }
+
+      .info-item label {
+        display: block;
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 5px;
+      }
+
+      .info-item .value {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .tag {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+      }
+
+      .rules-list {
+        margin-top: 15px;
+      }
+
+      .rule-item {
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        margin-bottom: 6px;
+        font-size: 13px;
+      }
+
+      .rule-item .rule-id {
+        color: #667eea;
+        font-weight: 600;
+      }
+
+      .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      .loading-overlay.active {
+        display: flex;
+      }
+
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        color: #999;
+      }
+
+      .empty-state h2 {
+        margin-bottom: 10px;
+        color: #666;
+      }
+
+      .example-links {
+        margin-top: 20px;
+        font-size: 14px;
+      }
+
+      .example-links a {
+        color: #667eea;
+        text-decoration: underline;
+        cursor: pointer;
+        margin: 0 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top-bar">
+      <div class="search-section">
+        <input
+          type="text"
+          class="search-input"
+          id="addressInput"
+          placeholder="Address, transaction"
+        />
+        <input
+          type="text"
+          class="search-input"
+          id="etherscanApiKey"
+          placeholder="Etherscan API Key (선택사항)"
+          value="91FZVKNIX7GYPESECU5PHPZIMKD72REX43"
+          style="width: 200px"
+        />
+        <button class="search-btn" onclick="analyzeAddress()">검색</button>
+      </div>
+      <div class="toolbar">
+        <div class="hop-controls">
+          <span style="font-size: 12px; color: #666; margin-right: 5px"
+            >확장:</span
+          >
+          <button
+            class="hop-btn active"
+            id="hop0Btn"
+            title="메인 노드만 표시"
+            onclick="expandToHop(0)"
+          >
+            메인
+          </button>
+          <button
+            class="hop-btn"
+            id="hop1Btn"
+            title="1-hop까지 확장"
+            onclick="expandToHop(1)"
+          >
+            1-hop
+          </button>
+          <button
+            class="hop-btn"
+            id="hop2Btn"
+            title="2-hop까지 확장"
+            onclick="expandToHop(2)"
+          >
+            2-hop
+          </button>
+          <button
+            class="hop-btn"
+            id="hop3Btn"
+            title="3-hop까지 확장"
+            onclick="expandToHop(3)"
+          >
+            3-hop
+          </button>
+        </div>
+        <button class="toolbar-btn" title="새로고침" onclick="resetGraph()">
+          🔄
+        </button>
+        <button class="toolbar-btn" title="줌 인" onclick="zoomIn()">➕</button>
+        <button class="toolbar-btn" title="줌 아웃" onclick="zoomOut()">
+          ➖
+        </button>
+        <button class="toolbar-btn" title="설정" onclick="showSettings()">
+          ⚙️
+        </button>
+      </div>
+    </div>
+
+    <div class="main-container">
+      <div class="graph-container">
+        <div id="graph-network"></div>
+        <div class="loading-overlay" id="loadingOverlay">
+          <div class="spinner"></div>
+        </div>
+        <div class="empty-state" id="emptyState">
+          <h2>주소를 검색하여 시작하세요</h2>
+          <p>Ethereum 주소를 입력하고 검색 버튼을 클릭하세요</p>
+          <div class="example-links">
+            예시: <a onclick="fillExample()">address</a> /
+            <a onclick="fillExample()">transaction</a>
+          </div>
+        </div>
+      </div>
+      <div class="info-panel" id="infoPanel">
+        <div
+          class="info-header"
+          style="
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+          "
+        >
+          <h2
+            id="infoTitle"
+            style="font-size: 18px; font-weight: 600; margin: 0"
+          >
+            주소 정보
+          </h2>
+          <button
+            class="close-btn"
+            onclick="closeInfoPanel()"
+            style="font-size: 24px; line-height: 1"
+          >
+            ×
+          </button>
+        </div>
+        <div id="infoContent" style="line-height: 1.6">
+          <!-- 동적으로 채워짐 -->
+        </div>
+        <div id="transactionsList" style="margin-top: 20px; display: none">
+          <h3 style="font-size: 14px; margin-bottom: 10px; color: #666">
+            거래 목록
+          </h3>
+          <div
+            id="transactionsTable"
+            style="max-height: 300px; overflow-y: auto"
+          >
+            <!-- 거래 목록이 여기에 표시됨 -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = window.location.origin;
+      let network = null;
+      let nodes = null;
+      let edges = null;
+      let currentData = null;
+
+      // 그래프 초기화
+      function initGraph() {
+        const container = document.getElementById("graph-network");
+        nodes = new vis.DataSet([]);
+        edges = new vis.DataSet([]);
+
+        const data = {
+          nodes: nodes,
+          edges: edges,
+        };
+
+        const options = {
+          nodes: {
+            shape: "dot",
+            size: 20,
+            font: {
+              size: 12,
+              color: "#333",
+              face: "Arial",
+            },
+            borderWidth: 2,
+            shadow: false, // 그림자 제거 (더 깔끔하게)
+            chosen: {
+              node: function (values, id, selected, hovering) {
+                values.size = 35; // 선택 시 크기 증가
+              },
+            },
+          },
+          edges: {
+            width: 2,
+            color: { color: "#4CAF50" }, // 초록색으로 변경 (Pathfinder 스타일)
+            arrows: {
+              to: {
+                enabled: true,
+                scaleFactor: 0.6,
+                type: "arrow",
+              },
+            },
+            smooth: {
+              type: "straightCross", // 직선으로 변경 (더 깔끔)
+              roundness: 0,
+            },
+            font: {
+              size: 9,
+              align: "middle",
+              color: "#333",
+            },
+          },
+          physics: {
+            enabled: true,
+            stabilization: {
+              iterations: 200,
+            },
+            barnesHut: {
+              gravitationalConstant: -2000,
+              centralGravity: 0.1,
+              springLength: 200,
+              springConstant: 0.04,
+              damping: 0.09,
+            },
+          },
+          interaction: {
+            hover: true,
+            tooltipDelay: 200,
+            zoomView: true,
+            dragView: true,
+          },
+        };
+
+        network = new vis.Network(container, data, options);
+
+        // 노드/엣지 클릭 이벤트
+        network.on("click", function (params) {
+          // 엣지 클릭이 우선
+          if (params.edges.length > 0) {
+            const edgeId = params.edges[0];
+            showEdgeInfo(edgeId);
+          } else if (params.nodes.length > 0) {
+            const nodeId = params.nodes[0];
+
+            // 더블 클릭 감지 (확장/축소)
+            if (params.event && params.event.detail === 2) {
+              toggleNodeExpansion(nodeId);
+            } else {
+              // 단일 클릭: 정보 표시
+              showNodeInfo(nodeId);
+            }
+          } else {
+            closeInfoPanel();
+          }
+        });
+      }
+
+      // 주소 분석
+      async function analyzeAddress() {
+        const address = document.getElementById("addressInput").value.trim();
+        if (!address) {
+          alert("주소를 입력해주세요.");
+          return;
+        }
+
+        document.getElementById("loadingOverlay").classList.add("active");
+        document.getElementById("emptyState").style.display = "none";
+
+        try {
+          // API 호출
+          // 레거시 데이터 자동 로드 + Etherscan API 사용 (선택적)
+          const response = await fetch(`${API_BASE}/api/analyze/address/demo`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              address: address,
+              chain: "ethereum",
+              transactions: [], // 빈 배열이면 자동으로 레거시 데이터 또는 Etherscan에서 로드
+              analysis_type: "advanced",
+              use_etherscan: !!document
+                .getElementById("etherscanApiKey")
+                .value.trim(), // API 키가 있을 때만 활성화
+              etherscan_api_key:
+                document.getElementById("etherscanApiKey").value.trim() ||
+                undefined,
+              max_hops: document.getElementById("etherscanApiKey").value.trim()
+                ? 3
+                : 1, // API 키 있으면 3-hop, 없으면 1-hop
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.error) {
+            console.error("❌ API 에러:", data.error);
+            alert("분석 실패: " + data.error);
+            return;
+          }
+
+          console.log("✅ 분석 성공:", {
+            address: data.target_address,
+            risk_score: data.risk_score,
+            nodes: data.graph?.nodes?.length || 0,
+            edges: data.graph?.edges?.length || 0,
+          });
+
+          currentData = data;
+
+          // 초기 상태: 메인 노드만 표시
+          currentMaxHop = 0;
+          expandedNodes.clear();
+
+          // Hop 버튼 초기화
+          document
+            .querySelectorAll(".hop-btn")
+            .forEach((btn) => btn.classList.remove("active"));
+          const hop0Btn = document.getElementById("hop0Btn");
+          if (hop0Btn) hop0Btn.classList.add("active");
+
+          // 그래프 데이터 생성
+          buildGraphFromData(address, data);
+
+          // 메인 노드 정보 표시
+          showNodeInfo(address);
+
+          // 거래 목록 표시
+          if (data.transactions && data.transactions.length > 0) {
+            showTransactionsList(data.transactions);
+          }
+        } catch (error) {
+          alert("오류 발생: " + error.message);
+        } finally {
+          document.getElementById("loadingOverlay").classList.remove("active");
+        }
+      }
+
+      // 확장 가능한 노드 상태 관리
+      const expandedNodes = new Set();
+      const nodeHopMap = new Map(); // 노드별 hop 정보
+      let currentMaxHop = 0; // 현재 표시되는 최대 hop (0 = 메인 노드만)
+
+      // 데이터로부터 그래프 생성
+      function buildGraphFromData(mainAddress, data) {
+        const graphNodes = [];
+        const graphEdges = [];
+
+        // API에서 받은 그래프 데이터 사용
+        const graphData = data.graph || { nodes: [], edges: [] };
+
+        // 노드 hop 정보 저장
+        nodeHopMap.clear();
+        graphData.nodes.forEach((node) => {
+          nodeHopMap.set(node.id.toLowerCase(), node.hop || 0);
+        });
+
+        // 메인 주소 노드
+        const riskLevel = data.risk_level || "low";
+        const riskColors = {
+          low: "#4caf50",
+          medium: "#ff9800",
+          high: "#f44336",
+          critical: "#d32f2f",
+        };
+
+        const mainAddressLower = mainAddress.toLowerCase();
+
+        // 백엔드에서 전달된 메인 노드 데이터 확인 (graphData는 위에서 이미 정의됨)
+        const mainNodeData =
+          graphData.nodes.find(
+            (n) => n.id && n.id.toLowerCase() === mainAddressLower
+          ) || {};
+
+        // 백엔드에서 이미 라벨이 설정되어 있으면 그대로 사용, 없으면 기본값
+        const mainLabel =
+          mainNodeData.label || mainAddress.substring(0, 10) + "...";
+        const mainTitle =
+          mainNodeData.title ||
+          mainAddress + "\nRisk Score: " + data.risk_score + "\nHop: 0 (Main)";
+
+        console.log("🔍 메인 노드 데이터:", {
+          mainNodeData,
+          mainLabel,
+          entityName: mainNodeData.entity_name,
+          addressStats: data.address_stats,
+        });
+
+        graphNodes.push({
+          id: mainAddressLower,
+          label: mainLabel, // 백엔드에서 설정한 라벨 사용
+          title: mainTitle,
+          color: {
+            background: riskColors[riskLevel] || "#4caf50",
+            border: "#333",
+            highlight: {
+              background: riskColors[riskLevel] || "#4caf50",
+              border: "#000",
+            },
+          },
+          size: 35,
+          font: { size: 13, bold: true },
+          shape: "dot",
+          hop: 0,
+          expanded: true, // 메인 노드는 항상 확장됨
+        });
+
+        // API에서 받은 그래프 데이터 사용 (있는 경우)
+        // graphData는 위에서 이미 정의됨
+        if (graphData.nodes) {
+          graphData.nodes.forEach((node) => {
+            const nodeId = node.id.toLowerCase();
+            if (nodeId === mainAddressLower) {
+              return; // 메인 노드는 이미 추가됨
+            }
+
+            const nodeType = node.type || "address";
+            const hop = node.hop || 1;
+
+            // 현재 설정된 최대 hop까지만 표시 (기본: 0 = 메인 노드만)
+            const isVisible = hop <= currentMaxHop || expandedNodes.has(nodeId);
+
+            if (!isVisible) {
+              return; // 아직 확장되지 않은 노드는 표시하지 않음
+            }
+
+            let nodeConfig = {
+              id: nodeId,
+              label:
+                node.label || node.address || nodeId.substring(0, 8) + "..",
+              title: node.title || (node.address || nodeId) + `\nHop: ${hop}`,
+              size:
+                node.size ||
+                (nodeType === "rule" ? 15 : nodeType === "tag" ? 12 : 20), // 크기 통일
+              shape:
+                nodeType === "rule"
+                  ? "diamond"
+                  : nodeType === "tag"
+                  ? "box"
+                  : "dot",
+              hop: hop,
+              expanded: expandedNodes.has(nodeId),
+            };
+
+            if (nodeType === "rule") {
+              nodeConfig.color = { background: "#667eea", border: "#333" };
+              nodeConfig.title = `Rule: ${node.label}\nScore: ${
+                node.score || 0
+              }`;
+            } else if (nodeType === "tag") {
+              nodeConfig.color = { background: "#ff9800", border: "#333" };
+              nodeConfig.title = `Risk Tag: ${node.label}`;
+            } else if (nodeType === "main_address") {
+              // 메인 주소는 이미 추가됨
+              return;
+            } else {
+              // hop에 따라 색상 조정
+              const hopColors = {
+                1: "#e0e0e0",
+                2: "#d0d0d0",
+                3: "#c0c0c0",
+              };
+              nodeConfig.color = {
+                background: hopColors[hop] || "#b0b0b0",
+                border: "#333",
+              };
+            }
+
+            graphNodes.push(nodeConfig);
+          });
+        }
+
+        // 엣지 추가 (양쪽 노드가 모두 표시되는 경우만)
+        if (graphData.edges) {
+          const visibleNodeIds = new Set(graphNodes.map((n) => n.id));
+
+          graphData.edges.forEach((edge) => {
+            const fromId = edge.from.toLowerCase();
+            const toId = edge.to.toLowerCase();
+
+            // 양쪽 노드가 모두 표시되는 경우만 엣지 추가
+            if (!visibleNodeIds.has(fromId) || !visibleNodeIds.has(toId)) {
+              return;
+            }
+
+            const edgeType = edge.type || "transaction";
+            const hop = edge.hop || 1;
+
+            // 엣지 색상 (Pathfinder 스타일: 초록색)
+            let edgeColor = "#4CAF50"; // 기본 초록색
+            if (edgeType === "rule_connection") {
+              edgeColor = "#667eea";
+            } else if (edgeType === "tag_connection") {
+              edgeColor = "#ff9800";
+            } else if (hop === 1) {
+              edgeColor = "#4CAF50"; // 1-hop은 초록색
+            } else {
+              edgeColor = "#81C784"; // 나머지는 연한 초록색
+            }
+
+            let edgeConfig = {
+              id: edge.id,
+              from: fromId,
+              to: toId,
+              label: edge.label || "", // 라벨은 백엔드에서 이미 간소화됨
+              color: edgeColor,
+              dashes: edge.dashes || false,
+              width: edge.width || Math.max(1, 3 - hop * 0.5), // 백엔드에서 계산한 width 사용
+              hop: hop,
+              transactions: edge.transactions || [], // 거래 정보 추가
+              arrows: {
+                to: {
+                  enabled: true,
+                  scaleFactor: 0.8, // 화살표 크기 줄임
+                },
+              },
+            };
+
+            graphEdges.push(edgeConfig);
+          });
+        }
+
+        // 디버깅: 노드와 엣지 개수 확인
+        console.log("📊 그래프 데이터:", {
+          nodes: graphNodes.length,
+          edges: graphEdges.length,
+          mainAddress: mainAddress,
+        });
+
+        if (graphNodes.length === 0) {
+          console.warn("⚠️ 노드가 없습니다!");
+          return;
+        }
+
+        if (graphEdges.length === 0) {
+          console.warn(
+            "⚠️ 엣지가 없습니다! 그래프가 연결되지 않았을 수 있습니다."
+          );
+        }
+
+        // 노드와 엣지 업데이트
+        nodes.clear();
+        edges.clear();
+        nodes.add(graphNodes);
+        edges.add(graphEdges);
+
+        // 그래프 레이아웃 조정
+        setTimeout(() => {
+          if (network) {
+            network.fit({
+              animation: {
+                duration: 1000,
+                easingFunction: "easeInOutQuad",
+              },
+            });
+          }
+        }, 100);
+      }
+
+      // 노드 정보 표시
+      function showNodeInfo(nodeId) {
+        if (!currentData) return;
+
+        const infoPanel = document.getElementById("infoPanel");
+        const infoContent = document.getElementById("infoContent");
+        const infoTitle = document.getElementById("infoTitle");
+
+        infoPanel.classList.remove("hidden");
+
+        if (nodeId.startsWith("rule_")) {
+          // 룰 노드 정보
+          const ruleId = nodeId.replace("rule_", "");
+          const rule = currentData.fired_rules.find(
+            (r) => `rule_${r.rule_id}` === nodeId
+          );
+          if (rule) {
+            infoTitle.textContent = "Rule 정보";
+            infoContent.innerHTML = `
+                        <div class="info-section">
+                            <h3>Rule ID</h3>
+                            <div class="address-display">${rule.rule_id}</div>
+                        </div>
+                        <div class="info-section">
+                            <h3>Score</h3>
+                            <div class="info-value">${rule.score}점</div>
+                        </div>
+                    `;
+          }
+        } else if (nodeId.startsWith("tag_")) {
+          // 태그 노드 정보
+          const tag = nodeId.replace("tag_", "");
+          infoTitle.textContent = "Risk Tag";
+          infoContent.innerHTML = `
+                    <div class="info-section">
+                        <h3>Tag</h3>
+                        <div class="info-value">${tag}</div>
+                    </div>
+                `;
+        } else {
+          // 메인 주소 정보 (IKNA 스타일)
+          const isMainAddress =
+            nodeId.toLowerCase() === currentData.target_address.toLowerCase();
+          const riskLevel = currentData.risk_level || "low";
+          const stats = currentData.address_stats || {};
+
+          // 주소 타입 결정
+          const addressType =
+            stats.entity_type === "DEX"
+              ? "ETH Smart Contract"
+              : stats.entity_type === "Exchange"
+              ? "ETH Address"
+              : "ETH Address";
+
+          // 날짜 포맷팅
+          const formatDate = (timestamp) => {
+            if (!timestamp) return "N/A";
+            const date = new Date(timestamp * 1000);
+            return date.toLocaleString("ko-KR", {
+              year: "numeric",
+              month: "short",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            });
+          };
+
+          // 금액 포맷팅 (더 정확하게)
+          const formatAmount = (amount) => {
+            if (!amount || amount === 0) return "0.00";
+            const numAmount = parseFloat(amount);
+            if (isNaN(numAmount)) return "0.00";
+
+            if (numAmount >= 1e12) return `${(numAmount / 1e12).toFixed(2)}T`;
+            if (numAmount >= 1e9) return `${(numAmount / 1e9).toFixed(2)}B`;
+            if (numAmount >= 1e6) return `${(numAmount / 1e6).toFixed(2)}M`;
+            if (numAmount >= 1e3) return `${(numAmount / 1e3).toFixed(2)}K`;
+            return numAmount.toFixed(2);
+          };
+
+          infoTitle.textContent = addressType;
+          infoContent.innerHTML = `
+                     <div class="info-section" style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                         <div class="address-display" style="font-size: 14px; font-weight: 500; margin-bottom: 8px;">${nodeId}</div>
+                         ${
+                           isMainAddress && stats.entity_name
+                             ? `<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                 <span style="font-size: 16px; font-weight: 600;">${
+                                   stats.entity_name
+                                 }</span>
+                                 <span class="risk-badge ${riskLevel}" style="font-size: 11px; padding: 2px 8px;">${riskLevel.toUpperCase()}</span>
+                               </div>`
+                             : isMainAddress
+                             ? `<span class="risk-badge ${riskLevel}">${riskLevel.toUpperCase()}</span>`
+                             : `<span style="color: #666;">Hop ${nodeHop}</span>`
+                         }
+                     </div>
+                     
+                     ${
+                       isMainAddress && stats.tags && stats.tags.length > 0
+                         ? `<div class="info-section" style="margin-bottom: 15px;">
+                             <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                               ${stats.tags
+                                 .map(
+                                   (tag) =>
+                                     `<span class="tag" style="background: #f0f0f0; padding: 4px 10px; border-radius: 12px; font-size: 11px;">${tag}</span>`
+                                 )
+                                 .join("")}
+                             </div>
+                           </div>`
+                         : ""
+                     }
+                     
+                     ${
+                       isMainAddress && stats.total_received !== undefined
+                         ? `<div class="info-section" style="margin-bottom: 15px;">
+                             <h3 style="font-size: 13px; color: #666; margin-bottom: 10px; font-weight: 600;">Financial Summary</h3>
+                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                               <div>
+                                 <div style="font-size: 11px; color: #999; margin-bottom: 4px;">Total received</div>
+                                 <div style="font-size: 16px; font-weight: 600;">${formatAmount(
+                                   stats.total_received
+                                 )} USD</div>
+                               </div>
+                               <div>
+                                 <div style="font-size: 11px; color: #999; margin-bottom: 4px;">Total sent</div>
+                                 <div style="font-size: 16px; font-weight: 600;">${formatAmount(
+                                   stats.total_sent
+                                 )} USD</div>
+                               </div>
+                               <div style="grid-column: 1 / -1;">
+                                 <div style="font-size: 11px; color: #999; margin-bottom: 4px;">Balance</div>
+                                 <div style="font-size: 16px; font-weight: 600;">${formatAmount(
+                                   stats.balance
+                                 )} USD</div>
+                               </div>
+                             </div>
+                           </div>`
+                         : ""
+                     }
+                     
+                     ${
+                       isMainAddress && (stats.first_usage || stats.last_usage)
+                         ? `<div class="info-section" style="margin-bottom: 15px;">
+                             <h3 style="font-size: 13px; color: #666; margin-bottom: 10px; font-weight: 600;">Usage Dates</h3>
+                             <div style="display: grid; gap: 8px;">
+                               <div>
+                                 <div style="font-size: 11px; color: #999; margin-bottom: 2px;">Last usage</div>
+                                 <div style="font-size: 12px;">${formatDate(
+                                   stats.last_usage
+                                 )}</div>
+                               </div>
+                               <div>
+                                 <div style="font-size: 11px; color: #999; margin-bottom: 2px;">First usage</div>
+                                 <div style="font-size: 12px;">${formatDate(
+                                   stats.first_usage
+                                 )}</div>
+                               </div>
+                             </div>
+                           </div>`
+                         : ""
+                     }
+                     
+                     ${
+                       isMainAddress && stats.graph_stats
+                         ? `<div class="info-section" style="margin-bottom: 15px;">
+                             <h3 style="font-size: 13px; color: #666; margin-bottom: 10px; font-weight: 600;">Relationship Metrics</h3>
+                             <div style="display: grid; gap: 8px;">
+                               <div style="display: flex; justify-content: space-between;">
+                                 <span style="font-size: 11px; color: #999;">Outgoing Relationships</span>
+                                 <span style="font-size: 12px; font-weight: 500;">${
+                                   stats.graph_stats.outgoing_relationships ||
+                                   stats.outgoing_count ||
+                                   0
+                                 }</span>
+                               </div>
+                               <div style="display: flex; justify-content: space-between;">
+                                 <span style="font-size: 11px; color: #999;">Incoming Relationships</span>
+                                 <span style="font-size: 12px; font-weight: 500;">${
+                                   stats.graph_stats.incoming_relationships ||
+                                   stats.incoming_count ||
+                                   0
+                                 }</span>
+                               </div>
+                               <div style="display: flex; justify-content: space-between;">
+                                 <span style="font-size: 11px; color: #999;">Cluster Addresses</span>
+                                 <span style="font-size: 12px; font-weight: 500;">${
+                                   stats.graph_stats.cluster_addresses || 0
+                                 }</span>
+                               </div>
+                             </div>
+                           </div>`
+                         : ""
+                     }
+                     
+                     <div class="info-grid" style="margin-top: 15px;">
+                        <div class="info-item">
+                            <label>Risk Score</label>
+                            <div class="value">${currentData.risk_score.toFixed(
+                              1
+                            )}</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Rule Score</label>
+                            <div class="value">${currentData.rule_score.toFixed(
+                              1
+                            )}</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Graph Score</label>
+                            <div class="value">${currentData.graph_score.toFixed(
+                              1
+                            )}</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Stage 1 Score</label>
+                            <div class="value">${currentData.stage1_score.toFixed(
+                              1
+                            )}</div>
+                        </div>
+                        ${
+                          currentData.stage2_score !== null
+                            ? `<div class="info-item">
+                                <label>Stage 2 Score</label>
+                                <div class="value">${currentData.stage2_score.toFixed(
+                                  1
+                                )}</div>
+                              </div>`
+                            : ""
+                        }
+                    </div>
+                    <div class="info-section">
+                        <h3>Fired Rules</h3>
+                        <div class="rules-list">
+                            ${
+                              currentData.fired_rules &&
+                              currentData.fired_rules.length > 0
+                                ? currentData.fired_rules
+                                    .map(
+                                      (rule) => `
+                                    <div class="rule-item">
+                                        <span class="rule-id">${rule.rule_id}</span> - ${rule.score}점
+                                    </div>
+                                `
+                                    )
+                                    .join("")
+                                : '<p style="color: #999;">발동된 룰이 없습니다.</p>'
+                            }
+                        </div>
+                    </div>
+                    <div class="info-section">
+                        <h3>Explanation</h3>
+                        <p style="color: #666; line-height: 1.6;">${
+                          currentData.explanation || "설명이 없습니다."
+                        }</p>
+                    </div>
+                `;
+        }
+      }
+
+      // 노드 확장/축소 토글
+      function toggleNodeExpansion(nodeId) {
+        if (!currentData || !currentData.graph) {
+          return;
+        }
+
+        const nodeIdLower = nodeId.toLowerCase();
+
+        if (expandedNodes.has(nodeIdLower)) {
+          // 축소: 해당 노드의 하위 노드 제거
+          expandedNodes.delete(nodeIdLower);
+        } else {
+          // 확장: 해당 노드의 하위 노드 추가
+          expandedNodes.add(nodeIdLower);
+        }
+
+        // 그래프 재구성
+        buildGraphFromData(currentData.target_address, currentData);
+      }
+
+      // 특정 hop까지 확장
+      function expandToHop(hop) {
+        if (!currentData || !currentData.graph) {
+          return;
+        }
+
+        // Hop 버튼 활성화 상태 업데이트
+        document
+          .querySelectorAll(".hop-btn")
+          .forEach((btn) => btn.classList.remove("active"));
+
+        // Hop 0 버튼 추가 (메인 노드만)
+        if (hop === 0) {
+          const hop0Btn = document.getElementById("hop0Btn");
+          if (hop0Btn) hop0Btn.classList.add("active");
+        } else {
+          const btn = document.getElementById(`hop${hop}Btn`);
+          if (btn) btn.classList.add("active");
+        }
+
+        // 현재 최대 hop 업데이트
+        currentMaxHop = hop;
+
+        // 해당 hop까지의 모든 노드 확장
+        expandedNodes.clear();
+        if (currentData.graph && currentData.graph.nodes) {
+          currentData.graph.nodes.forEach((node) => {
+            const nodeHop = node.hop || 0;
+            if (nodeHop <= hop) {
+              expandedNodes.add(node.id.toLowerCase());
+            }
+          });
+        }
+
+        // 그래프 재구성
+        buildGraphFromData(currentData.target_address, currentData);
+
+        // 레이아웃 재조정
+        if (network) {
+          network.fit({
+            animation: {
+              duration: 500,
+              easingFunction: "easeInOutQuad",
+            },
+          });
+        }
+      }
+
+      // 엣지 정보 표시 (IKNA 스타일 거래 상세 정보)
+      function showEdgeInfo(edgeId) {
+        if (!currentData || !currentData.graph) return;
+
+        const infoPanel = document.getElementById("infoPanel");
+        const infoContent = document.getElementById("infoContent");
+        const infoTitle = document.getElementById("infoTitle");
+
+        infoPanel.classList.remove("hidden");
+
+        // 엣지 정보 찾기
+        const graphData = currentData.graph || { edges: [] };
+        const edge = graphData.edges.find((e) => e.id === edgeId);
+
+        if (!edge) {
+          infoTitle.textContent = "Transaction";
+          infoContent.innerHTML = `<p style="color: #999;">거래 정보를 찾을 수 없습니다.</p>`;
+          return;
+        }
+
+        const transactions = edge.transactions || [];
+        const mainTx = transactions[0]; // 첫 번째 거래를 메인으로 표시
+
+        if (!mainTx) {
+          infoTitle.textContent = "Transaction";
+          infoContent.innerHTML = `<p style="color: #999;">거래 정보가 없습니다.</p>`;
+          return;
+        }
+
+        // 날짜 포맷팅
+        const formatDate = (timestamp) => {
+          if (!timestamp) return "N/A";
+          const date = new Date(timestamp * 1000);
+          return date.toLocaleString("ko-KR", {
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          });
+        };
+
+        // 금액 포맷팅
+        const formatValue = (value) => {
+          if (!value || value === 0) return "0 ETH";
+          if (value >= 1) return `${value.toFixed(4)} ETH`;
+          return `${(value * 1e18).toFixed(0)} Wei`;
+        };
+
+        const txHash = mainTx.tx_hash || edgeId;
+        const fromAddr = mainTx.from || edge.from;
+        const toAddr = mainTx.to || edge.to;
+        const value = mainTx.usd_value || mainTx.value / 1e18 || 0;
+        const timestamp = mainTx.timestamp || 0;
+
+        infoTitle.textContent = "ETH Transaction";
+        infoContent.innerHTML = `
+          <div class="info-section" style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+            <div style="font-size: 13px; font-weight: 500; margin-bottom: 8px; font-family: monospace;">${txHash.substring(
+              0,
+              10
+            )}...${txHash.substring(txHash.length - 6)}</div>
+          </div>
+          
+          <div class="info-section" style="margin-bottom: 15px;">
+            <h3 style="font-size: 13px; color: #666; margin-bottom: 10px; font-weight: 600;">Transaction Summary</h3>
+            <div style="display: grid; gap: 10px;">
+              <div>
+                <div style="font-size: 11px; color: #999; margin-bottom: 4px;">Value</div>
+                <div style="font-size: 14px; font-weight: 500;">${formatValue(
+                  value
+                )}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: #999; margin-bottom: 4px;">Sender</div>
+                <div style="font-size: 12px; font-family: monospace;">${fromAddr.substring(
+                  0,
+                  10
+                )}...${fromAddr.substring(fromAddr.length - 6)}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: #999; margin-bottom: 4px;">Receiver</div>
+                <div style="font-size: 12px; font-family: monospace;">${toAddr.substring(
+                  0,
+                  10
+                )}...${toAddr.substring(toAddr.length - 6)}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: #999; margin-bottom: 4px;">Timestamp</div>
+                <div style="font-size: 12px;">${formatDate(timestamp)}</div>
+              </div>
+            </div>
+          </div>
+          
+          ${
+            transactions.length > 1
+              ? `<div class="info-section" style="margin-bottom: 15px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h3 style="font-size: 13px; color: #666; font-weight: 600;">Sub Transfers</h3>
+                    <span style="font-size: 11px; color: #999;">${
+                      transactions.length
+                    } transfers</span>
+                  </div>
+                  <div style="max-height: 300px; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                      <thead>
+                        <tr style="background: #f5f5f5; border-bottom: 1px solid #ddd;">
+                          <th style="padding: 6px; text-align: left; font-weight: 600;">From</th>
+                          <th style="padding: 6px; text-align: left; font-weight: 600;">To</th>
+                          <th style="padding: 6px; text-align: right; font-weight: 600;">Value</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${transactions
+                          .map((tx) => {
+                            const txFrom = tx.from || "";
+                            const txTo = tx.to || "";
+                            const txValue =
+                              tx.usd_value || tx.value / 1e18 || 0;
+                            return `
+                            <tr style="border-bottom: 1px solid #f0f0f0;">
+                              <td style="padding: 6px; font-family: monospace; font-size: 10px;">${txFrom.substring(
+                                0,
+                                8
+                              )}...${txFrom.substring(txFrom.length - 4)}</td>
+                              <td style="padding: 6px; font-family: monospace; font-size: 10px;">${txTo.substring(
+                                0,
+                                8
+                              )}...${txTo.substring(txTo.length - 4)}</td>
+                              <td style="padding: 6px; text-align: right; font-weight: 500;">${formatValue(
+                                txValue
+                              )}</td>
+                            </tr>
+                          `;
+                          })
+                          .join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>`
+              : ""
+          }
+        `;
+      }
+
+      // 정보 패널 닫기
+      function closeInfoPanel() {
+        document.getElementById("infoPanel").classList.add("hidden");
+      }
+
+      // 거래 목록 표시
+      function showTransactionsList(transactions) {
+        const transactionsList = document.getElementById("transactionsList");
+        const transactionsTable = document.getElementById("transactionsTable");
+
+        if (!transactions || transactions.length === 0) {
+          transactionsList.style.display = "none";
+          return;
+        }
+
+        // 거래를 시간 순서로 정렬
+        const sortedTxs = transactions
+          .filter((tx) => tx.timestamp)
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .slice(0, 50); // 최대 50개만 표시
+
+        if (sortedTxs.length === 0) {
+          transactionsList.style.display = "none";
+          return;
+        }
+
+        // 테이블 생성
+        let tableHTML = `
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background: #f5f5f5; border-bottom: 1px solid #ddd;">
+                <th style="padding: 8px; text-align: left;">시간</th>
+                <th style="padding: 8px; text-align: left;">From</th>
+                <th style="padding: 8px; text-align: left;">To</th>
+                <th style="padding: 8px; text-align: right;">금액</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        sortedTxs.forEach((tx) => {
+          const date = new Date(tx.timestamp * 1000);
+          const dateStr = date.toLocaleString("ko-KR", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+
+          const fromAddr = tx.from || "";
+          const toAddr = tx.to || "";
+
+          // 값 계산: USD 우선, 없으면 Wei를 ETH로 변환
+          let value = tx.usd_value || tx.amount_usd || 0;
+          if (value === 0 || value === "0") {
+            const valueWei = tx.value || tx.value_wei || 0;
+            if (valueWei > 0) {
+              const valueEth = valueWei / 1e18;
+              // ETH 가격을 대략적으로 2000 USD로 추정
+              value = valueEth * 2000.0;
+            }
+          }
+
+          // 금액 포맷팅 개선
+          let valueStr = "0.00";
+          if (value > 0) {
+            if (value >= 1e12) {
+              valueStr = `${(value / 1e12).toFixed(2)}T`;
+            } else if (value >= 1e9) {
+              valueStr = `${(value / 1e9).toFixed(2)}B`;
+            } else if (value >= 1e6) {
+              valueStr = `${(value / 1e6).toFixed(2)}M`;
+            } else if (value >= 1e3) {
+              valueStr = `${(value / 1e3).toFixed(2)}K`;
+            } else {
+              valueStr = value.toFixed(2);
+            }
+          }
+
+          tableHTML += `
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 6px; color: #666;">${dateStr}</td>
+              <td style="padding: 6px; font-family: monospace; font-size: 11px;">${fromAddr.substring(
+                0,
+                10
+              )}...</td>
+              <td style="padding: 6px; font-family: monospace; font-size: 11px;">${toAddr.substring(
+                0,
+                10
+              )}...</td>
+              <td style="padding: 6px; text-align: right; font-weight: 500;">${valueStr}</td>
+            </tr>
+          `;
+        });
+
+        tableHTML += `
+            </tbody>
+          </table>
+        `;
+
+        transactionsTable.innerHTML = tableHTML;
+        transactionsList.style.display = "block";
+      }
+
+      // 그래프 리셋
+      function resetGraph() {
+        nodes.clear();
+        edges.clear();
+        expandedNodes.clear();
+        nodeHopMap.clear();
+        currentMaxHop = 0;
+        currentData = null;
+        document.getElementById("emptyState").style.display = "flex";
+        closeInfoPanel();
+
+        // Hop 버튼 초기화
+        document
+          .querySelectorAll(".hop-btn")
+          .forEach((btn) => btn.classList.remove("active"));
+        const hop0Btn = document.getElementById("hop0Btn");
+        if (hop0Btn) hop0Btn.classList.add("active");
+      }
+
+      // 줌 인
+      function zoomIn() {
+        if (network) {
+          const scale = network.getScale();
+          network.moveTo({ scale: scale * 1.2 });
+        }
+      }
+
+      // 줌 아웃
+      function zoomOut() {
+        if (network) {
+          const scale = network.getScale();
+          network.moveTo({ scale: scale * 0.8 });
+        }
+      }
+
+      // 설정
+      function showSettings() {
+        alert("설정 기능은 준비 중입니다.");
+      }
+
+      // 예시 주소 입력
+      function fillExample() {
+        document.getElementById("addressInput").value =
+          "0x3e66b66fd1d0b02fda6c811da9e0547970db2f21";
+      }
+
+      // Enter 키로 검색
+      document
+        .getElementById("addressInput")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            analyzeAddress();
+          }
+        });
+
+      // 초기화
+      initGraph();
+    </script>
+  </body>
+</html>

@@ -32,9 +32,10 @@ class PPRConnector:
         graph: nx.DiGraph
     ) -> float:
         """
-        Personalized PageRank 계산
+        Multi-source Personalized PageRank 계산
         
-        특정 소스 주소들(제재 주소, 믹서 등)에서 타겟 주소로의 연결성 측정
+        논문 Algorithm 1: Multi-source PPR
+        여러 소스 주소들에서 시작하는 랜덤 워크를 통해 타겟 주소의 연결성 측정
         
         Args:
             target_address: 분석 대상 주소
@@ -55,13 +56,91 @@ class PPRConnector:
         if not valid_sources:
             return 0.0
         
-        # Personalized PageRank 계산
-        # 소스 주소들에서 시작하는 랜덤 워크
+        # Multi-source Personalized PageRank 계산
+        # 논문: 각 소스 노드에서 동일한 가중치로 시작
         try:
             # NetworkX의 pagerank 활용 (personalization 파라미터 사용)
+            # 논문 Algorithm 1: 모든 소스 노드에 동일한 확률 분배
             personalization = {addr: 1.0 / len(valid_sources) for addr in valid_sources}
             
             # 나머지 노드는 0으로 설정
+            for node in graph.nodes():
+                if node not in personalization:
+                    personalization[node] = 0.0
+            
+            # Multi-source PPR 계산
+            # 논문: α = 0.5 (damping_factor), 하지만 기본값 0.85도 사용 가능
+            ppr_scores = nx.pagerank(
+                graph,
+                alpha=self.damping_factor,
+                personalization=personalization,
+                max_iter=self.max_iter
+            )
+            
+            # 타겟 주소의 PPR 점수 반환
+            # 논문: SPS (Set of PPR Scores)에 저장되는 값
+            return ppr_scores.get(target_address, 0.0)
+        
+        except Exception:
+            return 0.0
+    
+    def calculate_multi_source_ppr(
+        self,
+        target_address: str,
+        graph: nx.DiGraph,
+        auto_detect_sources: bool = True
+    ) -> Dict[str, Any]:
+        """
+        논문 Algorithm 1: Multi-source PPR (전체 구현)
+        
+        소스 노드 자동 탐지 및 PPR 점수 계산
+        
+        Args:
+            target_address: 분석 대상 주소
+            graph: 거래 그래프
+            auto_detect_sources: 소스 노드 자동 탐지 여부
+        
+        Returns:
+            {
+                "ppr_score": float,
+                "source_nodes": List[str],
+                "visited_nodes": List[str]
+            }
+        """
+        if not graph or target_address.lower() not in graph:
+            return {
+                "ppr_score": 0.0,
+                "source_nodes": [],
+                "visited_nodes": []
+            }
+        
+        target_address = target_address.lower()
+        
+        # 논문 Algorithm 1, Line 3-4: 소스 노드 탐지
+        # 소스 노드: out-degree > 0, in-degree == 0
+        if auto_detect_sources:
+            source_nodes = [
+                node for node in graph.nodes()
+                if graph.out_degree(node) > 0 and graph.in_degree(node) == 0
+            ]
+        else:
+            source_nodes = []
+        
+        if not source_nodes:
+            return {
+                "ppr_score": 0.0,
+                "source_nodes": [],
+                "visited_nodes": []
+            }
+        
+        # Multi-source PPR 계산
+        ppr_score = self.calculate_ppr(target_address, source_nodes, graph)
+        
+        # 방문한 노드들 (PPR 점수가 0이 아닌 노드들)
+        # 실제로는 PPR 계산 시 모든 노드에 점수가 부여되지만,
+        # 여기서는 의미있는 점수를 가진 노드만 반환
+        try:
+            personalization = {addr: 1.0 / len(source_nodes) for addr in source_nodes}
             for node in graph.nodes():
                 if node not in personalization:
                     personalization[node] = 0.0
@@ -73,11 +152,19 @@ class PPRConnector:
                 max_iter=self.max_iter
             )
             
-            # 타겟 주소의 PPR 점수 반환
-            return ppr_scores.get(target_address, 0.0)
+            # 의미있는 점수를 가진 노드들 (threshold: 0.001)
+            visited_nodes = [
+                node for node, score in ppr_scores.items()
+                if score > 0.001
+            ]
+        except:
+            visited_nodes = []
         
-        except Exception:
-            return 0.0
+        return {
+            "ppr_score": ppr_score,
+            "source_nodes": source_nodes,
+            "visited_nodes": visited_nodes
+        }
     
     def calculate_connection_risk(
         self,

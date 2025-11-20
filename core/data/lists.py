@@ -45,6 +45,12 @@ class ListLoader:
             self._cache["BRIDGE_LIST"] = self._load_bridge_list()
         return self._cache["BRIDGE_LIST"]
     
+    def get_scam_list(self) -> Set[str]:
+        """Scam 주소 리스트 반환"""
+        if "SCAM_LIST" not in self._cache:
+            self._cache["SCAM_LIST"] = self._load_json_list("scam_addresses.json")
+        return self._cache["SCAM_LIST"]
+    
     def get_all_lists(self) -> Dict[str, Set[str]]:
         """모든 리스트 반환"""
         return {
@@ -52,6 +58,7 @@ class ListLoader:
             "CEX_LIST": self.get_cex_list(),
             "MIXER_LIST": self.get_mixer_list(),
             "BRIDGE_LIST": self.get_bridge_list(),
+            "SCAM_LIST": self.get_scam_list(),
         }
     
     def _load_json_list(self, filename: str) -> Set[str]:

@@ -52,12 +52,32 @@ def load_token_metadata() -> Dict[str, Dict[str, str]]:
     }
 
 
+# 가격 캐시 (같은 컨트랙트는 재요청 안 함)
+_price_cache = {}
+_last_request_time = 0
+MIN_REQUEST_INTERVAL = 5.0  # 초 (Rate limit 방지, 무료 플랜 대응)
+
 def get_token_price_by_contract_address(chain: str, contract: str) -> Optional[float]:
     """
     Contract 주소로 직접 토큰 가격 조회
     CoinGecko API 사용 (무료, Contract 주소 직접 지원)
+    Rate limit 방지를 위한 캐싱 및 딜레이 포함
     """
+    global _price_cache, _last_request_time
+    
+    # 캐시 확인
+    cache_key = f"{chain}:{contract.lower()}"
+    if cache_key in _price_cache:
+        return _price_cache[cache_key]
+    
     try:
+        # Rate limit 방지: 요청 간 최소 간격 유지
+        import time
+        current_time = time.time()
+        time_since_last = current_time - _last_request_time
+        if time_since_last < MIN_REQUEST_INTERVAL:
+            time.sleep(MIN_REQUEST_INTERVAL - time_since_last)
+        
         # CoinGecko는 체인별로 다른 엔드포인트 사용
         chain_map = {
             "ethereum": "ethereum",
@@ -77,6 +97,20 @@ def get_token_price_by_contract_address(chain: str, contract: str) -> Optional[f
         }
         
         response = requests.get(url, params=params, timeout=10)
+        _last_request_time = time.time()
+        
+        if response.status_code == 429:
+            # Rate limit 에러 - 더 긴 대기 후 재시도 (최대 1회)
+            print(f"⚠️  CoinGecko Rate Limit (429). 10초 대기 후 재시도...")
+            time.sleep(10)
+            response = requests.get(url, params=params, timeout=10)
+            _last_request_time = time.time()
+            
+            if response.status_code == 429:
+                print(f"   ❌ 재시도 후에도 Rate Limit. 컨트랙트: {contract[:20]}...")
+                # 캐시에 None 저장하여 재요청 방지
+                _price_cache[cache_key] = None
+                return None
         
         if response.status_code != 200:
             return None
@@ -86,8 +120,13 @@ def get_token_price_by_contract_address(chain: str, contract: str) -> Optional[f
         if contract_lower in data:
             price = data[contract_lower].get("usd")
             if price:
-                return float(price)
+                price_float = float(price)
+                # 캐시에 저장
+                _price_cache[cache_key] = price_float
+                return price_float
         
+        # 가격이 없어도 캐시에 None 저장 (재요청 방지)
+        _price_cache[cache_key] = None
         return None
         
     except Exception as e:

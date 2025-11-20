@@ -48,6 +48,10 @@ class ScoringResult:
     fired_rules: List[FiredRule]
     explanation: str
     completed_at: str  # ISO8601 UTC 형식의 스코어링 완료 시각
+    # 백엔드 요구 필드
+    timestamp: str  # 트랜잭션 타임스탬프 (ISO8601 UTC)
+    chain_id: int  # 체인 ID (예: 1=Ethereum, 42161=Arbitrum)
+    value: float  # 거래 금액 (USD, amount_usd와 동일)
 
 
 class TransactionScorer:
@@ -98,6 +102,9 @@ class TransactionScorer:
         # 8. 완료 시각 생성
         completed_at = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         
+        # 9. chain을 chain_id로 변환 (ethereum -> ETH)
+        chain_id = self._convert_chain_to_chain_id(tx_input.chain)
+        
         return ScoringResult(
             target_address=tx_input.target_address,
             risk_score=risk_score,
@@ -105,7 +112,10 @@ class TransactionScorer:
             risk_tags=risk_tags,
             fired_rules=fired_rules,
             explanation=explanation,
-            completed_at=completed_at
+            completed_at=completed_at,
+            timestamp=tx_input.timestamp,  # 트랜잭션 타임스탬프
+            chain_id=chain_id,  # 체인 ID
+            value=tx_input.amount_usd  # 거래 금액 (USD)
         )
     
     def _convert_to_rule_data(self, tx: TransactionInput) -> Dict[str, Any]:
@@ -157,6 +167,23 @@ class TransactionScorer:
             return "medium"
         else:
             return "low"
+    
+    def _convert_chain_to_chain_id(self, chain: str) -> int:
+        """체인 이름을 체인 ID(숫자)로 변환"""
+        chain_mapping = {
+            "ethereum": 1,
+            "arbitrum": 42161,
+            "avalanche": 43114,
+            "base": 8453,
+            "polygon": 137,
+            "bsc": 56,
+            "fantom": 250,
+            "optimism": 10,
+            "blast": 81457
+        }
+        # 소문자로 변환하여 매핑 확인
+        chain_lower = chain.lower()
+        return chain_mapping.get(chain_lower, 1)  # 기본값: Ethereum (1)
     
     def _generate_risk_tags(
         self,

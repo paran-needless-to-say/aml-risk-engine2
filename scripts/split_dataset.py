@@ -22,15 +22,27 @@ def main():
     
     # 데이터셋 파일 찾기
     dataset_dir = project_root / "data" / "dataset"
-    dataset_files = list(dataset_dir.glob("*.json"))
     
+    # diverse_rules_enhanced_sampled.json 우선 선택 (그래프 통계 Feature 강화 버전)
+    dataset_file = None
+    if (dataset_dir / "diverse_rules_enhanced_sampled.json").exists():
+        dataset_file = dataset_dir / "diverse_rules_enhanced_sampled.json"
+    elif (dataset_dir / "diverse_rules_fixed_sampled.json").exists():
+        dataset_file = dataset_dir / "diverse_rules_fixed_sampled.json"
+    elif (dataset_dir / "diverse_rules_optimized_sampled.json").exists():
+        dataset_file = dataset_dir / "diverse_rules_optimized_sampled.json"
+    elif (dataset_dir / "diverse_rules_sampled.json").exists():
+        dataset_file = dataset_dir / "diverse_rules_sampled.json"
+    
+    if dataset_file is None:
+        dataset_files = list(dataset_dir.glob("*.json"))
     if not dataset_files:
         print("❌ 데이터셋 파일을 찾을 수 없습니다.")
         print(f"   경로: {dataset_dir}")
         return
-    
     # 가장 최근 파일 선택
     dataset_file = max(dataset_files, key=lambda p: p.stat().st_mtime)
+    
     print(f"📂 데이터셋 파일: {dataset_file.name}")
     
     # 데이터셋 로드

@@ -52,10 +52,23 @@ class MPOCryptoMLPatternDetector:
         
         from_addr = tx.get("from", "").lower()
         to_addr = tx.get("to", "").lower()
-        weight = float(tx.get("usd_value", tx.get("amount_usd", 0)))
+        
+        # USD 값 우선, 없으면 Wei 값 사용 (정규화를 위해 1e18로 나눔)
+        usd_value = float(tx.get("usd_value", tx.get("amount_usd", 0)))
+        if usd_value > 0:
+            weight = usd_value
+        else:
+            # Wei 단위 값을 사용 (1 ETH = 1e18 Wei)
+            wei_value = float(tx.get("value", 0))
+            if wei_value > 0:
+                # Wei를 ETH로 변환 (정규화)
+                weight = wei_value / 1e18
+            else:
+                weight = 0.0
+        
         timestamp = tx.get("timestamp", "")
         
-        if not from_addr or not to_addr:
+        if not from_addr or not to_addr or weight <= 0:
             return
         
         # 노드 추가
@@ -197,8 +210,8 @@ class MPOCryptoMLPatternDetector:
         self,
         vertex: str,
         min_fan_in_count: int = 5,
-        min_total_value: float = 1000.0,
-        min_each_value: float = 100.0
+        min_total_value: float = 0.01,  # ETH 단위로 조정 (USD 1000 -> ETH 0.01)
+        min_each_value: float = 0.001  # ETH 단위로 조정 (USD 100 -> ETH 0.001)
     ) -> Dict[str, Any]:
         """
         Fan-in 패턴 탐지 (B-204와 유사)
@@ -259,8 +272,8 @@ class MPOCryptoMLPatternDetector:
         self,
         vertex: str,
         min_fan_out_count: int = 5,
-        min_total_value: float = 1000.0,
-        min_each_value: float = 100.0
+        min_total_value: float = 0.01,  # ETH 단위로 조정 (USD 1000 -> ETH 0.01)
+        min_each_value: float = 0.001  # ETH 단위로 조정 (USD 100 -> ETH 0.001)
     ) -> Dict[str, Any]:
         """
         Fan-out 패턴 탐지 (B-203와 유사)

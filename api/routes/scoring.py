@@ -7,6 +7,31 @@ from core.scoring.engine import TransactionScorer, TransactionInput, ScoringResu
 scoring_bp = Blueprint("scoring", __name__)
 
 
+def _convert_chain_id_to_chain(chain_id: int) -> str:
+    """체인 ID(숫자)를 체인 이름으로 변환"""
+    chain_id_map = {
+        1: "ethereum",                    # Ethereum Mainnet
+        11155111: "ethereum",            # Sepolia Testnet
+        17000: "ethereum",               # Holesky Testnet
+        42161: "arbitrum",              # Arbitrum One Mainnet
+        42170: "arbitrum",              # Arbitrum Nova Mainnet
+        421614: "arbitrum",             # Arbitrum Sepolia Testnet
+        43114: "avalanche",             # Avalanche C-Chain
+        43113: "avalanche",             # Avalanche Fuji Testnet
+        8453: "base",                   # Base Mainnet
+        84532: "base",                  # Base Sepolia Testnet
+        137: "polygon",                 # Polygon Mainnet
+        80001: "polygon",               # Polygon Mumbai Testnet
+        56: "bsc",                      # BSC Mainnet
+        97: "bsc",                      # BSC Testnet
+        250: "fantom",                  # Fantom Opera
+        10: "optimism",                 # Optimism Mainnet
+        420: "optimism",                # Optimism Goerli Testnet
+        81457: "blast",                 # Blast Mainnet
+    }
+    return chain_id_map.get(chain_id, "ethereum")  # 기본값: ethereum
+
+
 @scoring_bp.route("/transaction", methods=["POST"])
 def score_transaction():
     """
@@ -29,7 +54,7 @@ def score_transaction():
           type: object
           required:
             - tx_hash
-            - chain
+            - chain_id
             - timestamp
             - block_height
             - target_address
@@ -45,9 +70,10 @@ def score_transaction():
             tx_hash:
               type: string
               example: "0x123..."
-            chain:
-              type: string
-              example: "ethereum"
+            chain_id:
+              type: integer
+              description: "체인 ID (예: 1=Ethereum, 42161=Arbitrum, 43114=Avalanche)"
+              example: 1
             timestamp:
               type: string
               format: date-time
@@ -142,6 +168,19 @@ def score_transaction():
               format: date-time
               description: 스코어링 완료 시각 (ISO8601 UTC)
               example: "2025-11-17T12:34:56Z"
+            timestamp:
+              type: string
+              format: date-time
+              description: 트랜잭션 타임스탬프 (ISO8601 UTC)
+              example: "2025-11-19T10:00:00Z"
+            chain_id:
+              type: string
+              description: "체인 ID (예: ETH, BNB)"
+              example: "ETH"
+            value:
+              type: number
+              description: 거래 금액 (USD, amount_usd와 동일)
+              example: 500000.00
       400:
         description: 잘못된 요청
         schema:
@@ -167,9 +206,40 @@ def score_transaction():
         
         # 입력 데이터 검증 및 변환
         try:
+            # chain_id를 chain으로 변환
+            chain_id = data.get("chain_id")
+            if chain_id is None:
+                # 하위 호환성: chain 문자열도 지원
+                chain_str = data.get("chain", "")
+                if chain_str:
+                    # 문자열을 숫자로 변환 시도
+                    chain_id_map_str = {
+                        "ethereum": 1,
+                        "arbitrum": 42161,
+                        "avalanche": 43114,
+                        "base": 8453,
+                        "polygon": 137,
+                        "bsc": 56,
+                        "fantom": 250,
+                        "optimism": 10,
+                        "blast": 81457
+                    }
+                    chain_id = chain_id_map_str.get(chain_str.lower())
+            
+            if chain_id is None:
+                return jsonify({"error": "Missing required field: chain_id"}), 400
+            
+            # chain_id를 정수로 변환
+            try:
+                chain_id = int(chain_id)
+            except (ValueError, TypeError):
+                return jsonify({"error": "chain_id must be an integer"}), 400
+            
+            chain = _convert_chain_id_to_chain(chain_id)
+            
             tx_input = TransactionInput(
                 tx_hash=data["tx_hash"],
-                chain=data["chain"],
+                chain=chain,
                 timestamp=data["timestamp"],
                 block_height=data["block_height"],
                 target_address=data["target_address"],
@@ -200,7 +270,11 @@ def score_transaction():
                 for rule in result.fired_rules
             ],
             "explanation": result.explanation,
-            "completed_at": result.completed_at
+            "completed_at": result.completed_at,
+            # 백엔드 요구 필드
+            "timestamp": result.timestamp,
+            "chain_id": result.chain_id,
+            "value": float(result.value)
         }), 200
     
     except Exception as e:

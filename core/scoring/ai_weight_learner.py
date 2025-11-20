@@ -72,11 +72,22 @@ class RuleWeightLearner:
             elif "prerequisites" in rule:
                 pattern_type = "stats"
             
+            # score 처리 (dynamic인 경우 기본값 사용)
+            score_value = rule.get("score", 0)
+            if isinstance(score_value, str) and score_value.lower() == "dynamic":
+                # dynamic 점수는 기본값 15 사용 (중간값)
+                base_score = 15.0
+            else:
+                try:
+                    base_score = float(score_value)
+                except (ValueError, TypeError):
+                    base_score = 0.0
+            
             features[rule_id] = RuleFeature(
                 rule_id=rule_id,
                 axis=rule.get("axis", "B"),
                 severity=rule.get("severity", "MEDIUM"),
-                base_score=float(rule.get("score", 0)),
+                base_score=base_score,
                 pattern_type=pattern_type,
                 name=rule.get("name", rule_id)
             )

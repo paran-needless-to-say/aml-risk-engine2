@@ -165,8 +165,37 @@ class RuleEvaluator:
                     })
                 continue
             
-            # 버킷 기반 룰인지 확인
-            has_bucket = "bucket" in rule
+            # 버킷 기반 룰인지 확인 (bucket 또는 buckets)
+            has_bucket = "bucket" in rule or "buckets" in rule
+            
+            # B-501: buckets 기반 동적 점수 룰 (특별 처리)
+            if rule_id == "B-501":
+                buckets_spec = rule.get("buckets")
+                if buckets_spec:
+                    # 동적 점수 계산
+                    field = buckets_spec.get("field", "usd_value")
+                    ranges = buckets_spec.get("ranges", [])
+                    value = float(tx_data.get(field, 0))
+                    
+                    # 범위에 맞는 점수 찾기
+                    dynamic_score = 0
+                    for range_spec in ranges:
+                        min_val = range_spec.get("min", 0)
+                        max_val = range_spec.get("max", float('inf'))
+                        if min_val <= value < max_val:
+                            dynamic_score = range_spec.get("score", 0)
+                            break
+                    
+                    # 점수가 0보다 크면 룰 발동
+                    if dynamic_score > 0:
+                        fired_rules.append({
+                            "rule_id": rule_id,
+                            "score": float(dynamic_score),
+                            "axis": rule.get("axis", "B"),
+                            "name": rule.get("name", rule_id),
+                            "severity": rule.get("severity", "MEDIUM")
+                        })
+                continue  # B-501은 여기서 처리 완료
             
             # 윈도우 기반 룰인지 확인
             has_window = "window" in rule or ("aggregations" in rule and not has_bucket)

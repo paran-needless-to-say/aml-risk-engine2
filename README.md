@@ -111,14 +111,18 @@ python scripts/update_sdn_list.py
 ### 3. 서버 실행
 
 ```bash
-python api/app.py
+python3 run_server.py
 ```
 
-서버가 `http://localhost:5000`에서 실행됩니다.
+서버가 `http://localhost:5001` (또는 5002)에서 실행됩니다.
+
+**참고**: `run_server.py`가 포트 충돌을 자동으로 처리합니다.
 
 ### 4. API 문서 확인
 
-브라우저에서 `http://localhost:5000/api-docs` 접속 (Swagger UI)
+브라우저에서 `http://localhost:5001/api-docs` 접속 (Swagger UI)
+
+**배포 가이드**: `docs/DEPLOYMENT_GUIDE.md` 참고
 
 ---
 
