@@ -19,6 +19,9 @@
 - **API_DOCUMENTATION.md** - 전체 API 문서
 - **RISK_SCORING_IO.md** - 리스크 스코어링 엔진 입출력 명세 ⭐
 - **DEPLOYMENT_GUIDE.md** - 배포 가이드 (백엔드 팀용) ⭐
+- **QUICK_TEST_GUIDE.md** - 빠른 테스트 가이드
+- **CORRECT_INPUT_FORMAT.md** - 올바른 입력 포맷 가이드
+- **OPTIONAL_FIELDS_EXPLANATION.md** - 선택 필드 설명
 
 ---
 
@@ -65,4 +68,6 @@
 
 ---
 
-**35개 → 9개** 핵심 문서로 정리 완료
+**핵심 문서**: 프로젝트 개요, 논문, API 문서, 테스트 가이드
+
+**개발용 문서**: `archive/` 폴더에 보관
