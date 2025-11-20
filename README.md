@@ -62,22 +62,37 @@ python3 run_server.py
 
 ```json
 {
-  "address": "0xabc123...",
+  "address": "0xhigh_risk_mixer_sanctioned",
   "chain_id": 1,
   "transactions": [
     {
-      "tx_hash": "0x123...",
+      "tx_hash": "0xtx1_mixer",
       "chain_id": 1,
-      "timestamp": "2025-11-17T12:34:56Z",
-      "block_height": 21039493,
-      "target_address": "0xabc123...",
-      "counterparty_address": "0xdef456...",
+      "timestamp": "2025-11-15T00:27:17.865209Z",
+      "block_height": 1000,
+      "target_address": "0xhigh_risk_mixer_sanctioned",
+      "counterparty_address": "0xmixer_service_123",
       "label": "mixer",
-      "is_sanctioned": true,
+      "is_sanctioned": false,
       "is_known_scam": false,
       "is_mixer": true,
       "is_bridge": false,
       "amount_usd": 5000.0,
+      "asset_contract": "0xETH"
+    },
+    {
+      "tx_hash": "0xtx2_sanctioned",
+      "chain_id": 1,
+      "timestamp": "2024-01-01T10:30:00Z",
+      "block_height": 1001,
+      "target_address": "0xhigh_risk_mixer_sanctioned",
+      "counterparty_address": "0xsanctioned_address_ofac",
+      "label": "unknown",
+      "is_sanctioned": true,
+      "is_known_scam": false,
+      "is_mixer": false,
+      "is_bridge": false,
+      "amount_usd": 3000.0,
       "asset_contract": "0xETH"
     }
   ],
@@ -89,17 +104,25 @@ python3 run_server.py
 
 ```json
 {
-  "target_address": "0xabc123...",
+  "target_address": "0xhigh_risk_mixer_sanctioned",
   "risk_score": 98,
   "risk_level": "critical",
-  "risk_tags": ["mixer_inflow", "sanction_exposure", "high_value_transfer"],
-  "fired_rules": [
-    {"rule_id": "E-101", "score": 32},
-    {"rule_id": "C-001", "score": 30},
-    {"rule_id": "C-003", "score": 25}
+  "risk_tags": [
+    "mixer_inflow",
+    "sanction_exposure",
+    "high_value_transfer",
+    "suspicious_pattern"
   ],
-  "explanation": "...",
-  "completed_at": "2025-11-20T16:32:47Z",
+  "fired_rules": [
+    { "rule_id": "E-101", "score": 32 },
+    { "rule_id": "C-001", "score": 30 },
+    { "rule_id": "C-003", "score": 25 },
+    { "rule_id": "C-004", "score": 20 },
+    { "rule_id": "B-101", "score": 15 },
+    { "rule_id": "B-501", "score": 6 }
+  ],
+  "explanation": "Mixer Direct Exposure 패턴 감지, Sanction Direct Touch 패턴 감지...",
+  "completed_at": "2025-11-20T16:59:08Z",
   "timestamp": "2025-11-15T00:57:17.865209Z",
   "chain_id": 1,
   "value": 16000.0
@@ -114,14 +137,14 @@ python3 run_server.py
 
 ```json
 {
-  "tx_hash": "0x123...",
+  "tx_hash": "0xtx1_mixer",
   "chain_id": 1,
-  "timestamp": "2025-11-17T12:34:56Z",
-  "block_height": 21039493,
-  "target_address": "0xabc123...",
-  "counterparty_address": "0xdef456...",
+  "timestamp": "2025-11-15T00:27:17.865209Z",
+  "block_height": 1000,
+  "target_address": "0xhigh_risk_mixer_sanctioned",
+  "counterparty_address": "0xmixer_service_123",
   "label": "mixer",
-  "is_sanctioned": true,
+  "is_sanctioned": false,
   "is_known_scam": false,
   "is_mixer": true,
   "is_bridge": false,
@@ -134,17 +157,20 @@ python3 run_server.py
 
 ```json
 {
-  "target_address": "0xabc123...",
+  "target_address": "0xhigh_risk_mixer_sanctioned",
   "risk_score": 100,
   "risk_level": "critical",
   "risk_tags": ["mixer_inflow", "high_value_transfer"],
   "fired_rules": [
-    {"rule_id": "E-101", "score": 32},
-    {"rule_id": "C-003", "score": 25}
+    { "rule_id": "E-101", "score": 32 },
+    { "rule_id": "C-003", "score": 25 },
+    { "rule_id": "C-004", "score": 20 },
+    { "rule_id": "B-101", "score": 15 },
+    { "rule_id": "B-501", "score": 6 }
   ],
-  "explanation": "...",
-  "completed_at": "2025-11-20T16:32:47Z",
-  "timestamp": "2025-11-17T12:34:56Z",
+  "explanation": "1-hop sanctioned mixer에서 5,000USD 이상 유입...",
+  "completed_at": "2025-11-20T16:59:19Z",
+  "timestamp": "2025-11-15T00:27:17.865209Z",
   "chain_id": 1,
   "value": 5000.0
 }
@@ -289,17 +315,17 @@ curl -X POST http://localhost:5001/api/score/transaction \
 
 ## 체인 ID 매핑
 
-| Chain ID | 체인 이름 |
-|----------|----------|
-| 1 | Ethereum Mainnet |
-| 42161 | Arbitrum One |
-| 43114 | Avalanche C-Chain |
-| 8453 | Base Mainnet |
-| 137 | Polygon Mainnet |
-| 56 | BSC Mainnet |
-| 250 | Fantom Opera |
-| 10 | Optimism Mainnet |
-| 81457 | Blast Mainnet |
+| Chain ID | 체인 이름         |
+| -------- | ----------------- |
+| 1        | Ethereum Mainnet  |
+| 42161    | Arbitrum One      |
+| 43114    | Avalanche C-Chain |
+| 8453     | Base Mainnet      |
+| 137      | Polygon Mainnet   |
+| 56       | BSC Mainnet       |
+| 250      | Fantom Opera      |
+| 10       | Optimism Mainnet  |
+| 81457    | Blast Mainnet     |
 
 ---
 
