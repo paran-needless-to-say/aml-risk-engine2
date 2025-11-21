@@ -129,7 +129,7 @@ POST /api/analyze/address
 
 #### 옵션 B: Multi-hop 모드 (3-hop, 정밀) ⭐️ 권장
 
-**백엔드가 `transactions` 자동 수집 (신규 방식)**:
+**Step 1: 프론트엔드가 보내는 Request (간단!)**:
 
 ```json
 POST /api/analyze/address
@@ -142,6 +142,78 @@ POST /api/analyze/address
   "time_window_hours": 24
 }
 ```
+
+**Step 2: 백엔드가 자동으로 수집하는 데이터** (프론트엔드는 안 보냄):
+
+```json
+{
+  "address": "0xhigh_risk_mixer_sanctioned",
+  "chain_id": 1,
+  "transactions": [
+    // 1-hop: Target의 직접 거래
+    {
+      "tx_hash": "0xtx1_mixer",
+      "hop_level": 1,
+      "from": "0xmixer_service_123", // Mixer
+      "to": "0xhigh_risk_mixer_sanctioned", // → Target
+      "chain_id": 1,
+      "timestamp": "2025-11-15T00:27:17Z",
+      "block_height": 1000,
+      "label": "mixer",
+      "is_sanctioned": false,
+      "is_mixer": true,
+      "amount_usd": 5000.0,
+      "asset_contract": "0xETH"
+    },
+
+    // 2-hop: Mixer의 이전 거래 (Mixer가 어디서 받았는지)
+    {
+      "tx_hash": "0xtx_mixer_inflow",
+      "hop_level": 2,
+      "from": "0xunknown_wallet_1", // 알 수 없는 주소
+      "to": "0xmixer_service_123", // → Mixer
+      "chain_id": 1,
+      "timestamp": "2025-11-15T00:20:00Z",
+      "block_height": 999,
+      "label": "unknown",
+      "is_sanctioned": false,
+      "is_mixer": false,
+      "amount_usd": 4950.0,
+      "asset_contract": "0xETH"
+    },
+
+    // 3-hop: 알 수 없는 주소의 이전 거래
+    {
+      "tx_hash": "0xtx_origin",
+      "hop_level": 3,
+      "from": "0xsanctioned_address_ofac", // 제재 주소!
+      "to": "0xunknown_wallet_1", // → 알 수 없는 주소
+      "chain_id": 1,
+      "timestamp": "2025-11-15T00:10:00Z",
+      "block_height": 998,
+      "label": "unknown",
+      "is_sanctioned": true,
+      "is_mixer": false,
+      "amount_usd": 4900.0,
+      "asset_contract": "0xETH"
+    }
+  ]
+}
+```
+
+**💡 3-hop 경로 추적**:
+
+```
+제재 주소 (0xsanctioned...)  [hop 3]
+    ↓ 4900 USD
+알 수 없는 주소 (0xunknown...)  [hop 2]
+    ↓ 4950 USD
+Mixer (0xmixer...)  [hop 1]
+    ↓ 5000 USD
+Target (0xhigh_risk...)  [분석 대상]
+```
+
+→ **Layering Chain 패턴 탐지!** (B-201 룰 발동)
 
 **특징**:
 
