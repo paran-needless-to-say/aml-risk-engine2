@@ -66,11 +66,13 @@ python3 run_server.py
 ```
 
 **백엔드의 역할**:
+
 1. 주소의 거래 데이터 수집 (Etherscan/Alchemy API)
 2. 거래 데이터를 표준 형식으로 변환
 3. 리스크 스코어링 API에 전송
 
 **리스크 스코어링 API의 역할**:
+
 1. 거래 데이터 분석
 2. TRACE-X 룰북 기반 평가
 3. 리스크 스코어 + 상세 결과 반환
@@ -166,6 +168,7 @@ POST /api/analyze/address
 **백엔드가 더 많은 거래 데이터를 수집하면 더 정밀한 분석 가능**:
 
 백엔드가 Target 주소뿐만 아니라 **counterparty 주소들의 거래까지 수집**하면:
+
 - ✅ Layering Chain 패턴 탐지 (B-201)
 - ✅ Cycle 패턴 탐지 (B-202)
 - ✅ 리스크 탐지 정확도 30-50% 향상
@@ -257,6 +260,7 @@ Target (0xhigh_risk...)  [분석 대상]
 → **Layering Chain 패턴 탐지!** (B-201 룰 발동)
 
 **백엔드가 Multi-hop 데이터를 수집하면**:
+
 - ✅ 복잡한 세탁 경로 추적 가능
 - ✅ Layering Chain (B-201), Cycle (B-202) 패턴 탐지
 - ✅ 리스크 탐지 정확도 30-50% 향상
@@ -321,6 +325,7 @@ Target (0xhigh_risk...)  [분석 대상]
 #### 백엔드가 반드시 제공해야 하는 필드
 
 **최상위 레벨**:
+
 - `address` (string): 분석 대상 주소
 - `chain_id` (integer): 체인 ID (1=Ethereum, 42161=Arbitrum 등)
 - `transactions` (array): 거래 배열
