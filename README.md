@@ -58,15 +58,32 @@ python3 run_server.py
 
 ## API 사용
 
+### 시스템 구조
+
+```
+프론트엔드 → 백엔드 → 리스크 스코어링 API
+              (거래 수집)    (리스크 분석)
+```
+
+**백엔드의 역할**:
+1. 주소의 거래 데이터 수집 (Etherscan/Alchemy API)
+2. 거래 데이터를 표준 형식으로 변환
+3. 리스크 스코어링 API에 전송
+
+**리스크 스코어링 API의 역할**:
+1. 거래 데이터 분석
+2. TRACE-X 룰북 기반 평가
+3. 리스크 스코어 + 상세 결과 반환
+
+---
+
 ### 주소 분석 API
 
 **엔드포인트**: `POST /api/analyze/address`
 
-리스크 스코어링 API는 **2가지 모드**를 지원합니다:
+#### 백엔드가 보내야 하는 Request 형식
 
-#### 옵션 A: 기본 모드 (1-hop, 빠름)
-
-**프론트엔드가 `transactions` 제공 (기존 방식)**:
+**기본 형식** (필수 필드):
 
 ```json
 POST /api/analyze/address
@@ -119,17 +136,41 @@ POST /api/analyze/address
 - **거래 1**: `Mixer (0xmixer...) → Target (0xhigh_risk...)` - Mixer에서 Target으로 5000 USD 유입
 - **거래 2**: `제재 주소 (0xsanctioned...) → Target (0xhigh_risk...)` - 제재 주소에서 Target으로 3000 USD 유입
 
-**특징**:
+---
 
-- ✅ 응답 시간: 1-2초
-- ✅ 실시간 대시보드에 적합
-- ⚠️ 1-hop 분석만 가능 (단순 패턴만 탐지)
+### Response (리스크 스코어링이 백엔드에게 반환)
+
+```json
+{
+  "target_address": "0xhigh_risk_mixer_sanctioned",
+  "risk_score": 78,
+  "risk_level": "high",
+  "risk_tags": ["mixer_inflow", "sanction_exposure", "high_value_transfer"],
+  "fired_rules": [
+    { "rule_id": "E-101", "score": 25 },
+    { "rule_id": "C-001", "score": 30 },
+    { "rule_id": "C-003", "score": 25 }
+  ],
+  "explanation": "Mixer에서 5000 USD 유입, 제재 주소에서 3000 USD 유입",
+  "completed_at": "2025-11-21T10:00:00Z",
+  "timestamp": "2025-11-15T00:27:17Z",
+  "chain_id": 1,
+  "value": 8000.0
+}
+```
 
 ---
 
-#### 옵션 B: Multi-hop 모드 (3-hop, 정밀) ⭐️ 권장
+### 선택사항: Multi-hop 데이터 수집 (고급 분석)
 
-**Step 1: 프론트엔드가 보내는 Request (간단!)**:
+**백엔드가 더 많은 거래 데이터를 수집하면 더 정밀한 분석 가능**:
+
+백엔드가 Target 주소뿐만 아니라 **counterparty 주소들의 거래까지 수집**하면:
+- ✅ Layering Chain 패턴 탐지 (B-201)
+- ✅ Cycle 패턴 탐지 (B-202)
+- ✅ 리스크 탐지 정확도 30-50% 향상
+
+**예시: 3-hop 데이터 수집**:
 
 ```json
 POST /api/analyze/address
@@ -143,7 +184,7 @@ POST /api/analyze/address
 }
 ```
 
-**Step 2: 백엔드가 자동으로 수집하는 데이터** (프론트엔드는 안 보냄):
+**백엔드가 수집해야 하는 데이터**:
 
 ```json
 {
@@ -215,48 +256,22 @@ Target (0xhigh_risk...)  [분석 대상]
 
 → **Layering Chain 패턴 탐지!** (B-201 룰 발동)
 
-**특징**:
+**백엔드가 Multi-hop 데이터를 수집하면**:
+- ✅ 복잡한 세탁 경로 추적 가능
+- ✅ Layering Chain (B-201), Cycle (B-202) 패턴 탐지
+- ✅ 리스크 탐지 정확도 30-50% 향상
 
-- ✅ 응답 시간: 3-8초 (캐싱 시)
-- ✅ 복잡한 세탁 패턴 탐지 (Layering Chain, Cycle)
-- ✅ 정확도 30-50% 향상
-- ✅ 그래프 구조 분석 (B-201, B-202 룰 활성화)
-- ⚠️ 백엔드 구현 필요 (Multi-hop 수집)
+**참고**: Multi-hop 데이터 수집 방법은 `docs/MULTI_HOP_REQUIREMENT.md` 참고
 
-**응답 예시**:
-
-```json
-{
-  "target_address": "0xhigh_risk_mixer_sanctioned",
-  "risk_score": 98,
-  "risk_level": "critical",
-  "risk_tags": [
-    "mixer_inflow",
-    "sanction_exposure",
-    "high_value_transfer",
-    "suspicious_pattern"
-  ],
-  "fired_rules": [
-    { "rule_id": "E-101", "score": 32 },
-    { "rule_id": "C-001", "score": 30 },
-    { "rule_id": "C-003", "score": 25 },
-    { "rule_id": "C-004", "score": 20 },
-    { "rule_id": "B-101", "score": 15 },
-    { "rule_id": "B-501", "score": 6 }
-  ],
-  "explanation": "Mixer Direct Exposure 패턴 감지, Sanction Direct Touch 패턴 감지...",
-  "completed_at": "2025-11-20T16:59:08Z",
-  "timestamp": "2025-11-15T00:57:17.865209Z",
-  "chain_id": 1,
-  "value": 16000.0
-}
-```
+---
 
 ### 단일 트랜잭션 스코어링 API
 
 **엔드포인트**: `POST /api/score/transaction`
 
-**요청 예시**:
+주소 전체가 아닌 **하나의 거래만** 분석하는 API입니다.
+
+**백엔드가 보내는 Request**:
 
 ```json
 {
@@ -299,24 +314,18 @@ Target (0xhigh_risk...)  [분석 대상]
 }
 ```
 
-### 필수 파라미터
+---
 
-| 파라미터   | 타입    | 설명                           |
-| ---------- | ------- | ------------------------------ |
-| `address`  | string  | 분석 대상 주소                 |
-| `chain_id` | integer | 체인 ID (숫자, 예: 1=Ethereum) |
+### 필드 상세 설명
 
-### 선택 파라미터
+#### 백엔드가 반드시 제공해야 하는 필드
 
-| 파라미터            | 타입    | 기본값  | 설명                              |
-| ------------------- | ------- | ------- | --------------------------------- |
-| `transactions`      | array   | -       | 거래 히스토리 (옵션 A에서 필수)   |
-| `max_hops`          | integer | 1       | 최대 홉 수 (1~3, 옵션 B에서 필수) |
-| `analysis_type`     | string  | "basic" | "basic" 또는 "advanced"           |
-| `time_window_hours` | integer | -       | 최근 N시간 거래만 수집            |
-| `time_range`        | object  | -       | 시간 범위 필터                    |
+**최상위 레벨**:
+- `address` (string): 분석 대상 주소
+- `chain_id` (integer): 체인 ID (1=Ethereum, 42161=Arbitrum 등)
+- `transactions` (array): 거래 배열
 
-### 거래 데이터 구조 (옵션 A)
+**transactions 배열의 각 거래**:
 
 ```json
 {
@@ -336,19 +345,18 @@ Target (0xhigh_risk...)  [분석 대상]
 }
 ```
 
-### 중요 사항
+#### 백엔드가 준비해야 할 것
 
-1. **chain_id는 숫자**: `1` (Ethereum), `42161` (Arbitrum), `43114` (Avalanche) 등
-2. **2가지 모드 지원**:
-   - **기본 모드**: `transactions` 제공 (빠름, 1-2초)
-   - **Multi-hop 모드**: `max_hops` 제공, 백엔드가 수집 (정밀, 3-8초)
-3. **Multi-hop 장점**: 복잡한 세탁 패턴 탐지 (Layering Chain, Cycle), 정확도 30-50% 향상
+1. **거래 데이터 수집**: Etherscan/Alchemy API로 주소의 거래 수집
+2. **라벨링**: `label`, `is_sanctioned`, `is_mixer` 등 판단
+3. **USD 환산**: `amount_usd` 계산 (시세 API 사용)
+4. **방향 명확화**: `from`, `to` 주소 정확히 구분
 
 자세한 내용은 다음 문서를 참고하세요:
 
-- `docs/FINAL_API_SPEC.md` - 최종 API 스펙 (Multi-hop 지원)
+- `docs/FINAL_API_SPEC.md` - 최종 API 스펙
 - `docs/CORRECT_INPUT_FORMAT.md` - 올바른 입력 포맷
-- `docs/MULTI_HOP_REQUIREMENT.md` - Multi-hop 요구사항
+- `docs/MULTI_HOP_REQUIREMENT.md` - Multi-hop 데이터 수집 방법
 
 ---
 
