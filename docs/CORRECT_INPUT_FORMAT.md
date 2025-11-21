@@ -4,11 +4,15 @@
 
 ## ✅ 올바른 입력 형식
 
-### 주소 분석 API (`POST /api/analyze/address`)
+리스크 스코어링 API는 **2가지 모드**를 지원합니다:
+
+### 옵션 A: 기본 모드 (1-hop) - 빠른 분석
+
+프론트엔드가 `transactions` 제공:
 
 ```json
 {
-  "address": "0xabc123...", // 필수: 분석 대상 주소
+  "address": "0xTarget", // 필수
   "chain_id": 1, // 필수: 체인 ID (숫자)
   "transactions": [
     // 필수: 거래 히스토리 배열
@@ -17,18 +21,80 @@
       "chain_id": 1, // 필수: 숫자 (1=Ethereum)
       "timestamp": "2025-11-17T12:34:56Z", // 필수: ISO8601 UTC
       "block_height": 21039493, // 필수: 정수
-      "target_address": "0xabc123...", // 필수: 스코어링 대상 주소
-      "counterparty_address": "0xdef456...", // 필수: 상대방 주소
+      "target_address": "0xTarget", // 필수: 스코어링 대상 주소
+      "counterparty_address": "0xMixer1", // 필수: 상대방 주소
       "label": "mixer", // 필수: mixer|bridge|cex|dex|defi|unknown
-      "is_sanctioned": true, // 필수: boolean
+      "is_sanctioned": false, // 필수: boolean
       "is_known_scam": false, // 필수: boolean
       "is_mixer": true, // 필수: boolean
       "is_bridge": false, // 필수: boolean
-      "amount_usd": 500000.0, // 필수: 숫자 (USD)
+      "amount_usd": 5000.0, // 필수: 숫자 (USD)
       "asset_contract": "0xETH" // 필수: 자산 컨트랙트 주소
     }
   ],
-  "analysis_type": "basic" // 선택: "basic" 또는 "advanced" (기본값: "basic")
+  "analysis_type": "basic" // 선택: 기본값 "basic"
+}
+```
+
+**특징**: 빠름 (1-2초), 1-hop 분석만 가능
+
+---
+
+### 옵션 B: Multi-hop 모드 (3-hop) - 정밀 분석 ⭐️ 권장
+
+백엔드가 `transactions` 자동 수집:
+
+```json
+{
+  "address": "0xTarget", // 필수
+  "chain_id": 1, // 필수: 체인 ID (숫자)
+  "max_hops": 3, // 🆕 필수: 최대 홉 수 (1~3)
+  "analysis_type": "advanced", // 🆕 필수: "advanced"
+  "time_window_hours": 24 // 선택: 최근 N시간 거래만 수집
+}
+```
+
+**특징**: 정밀 (3-8초), 복잡한 패턴 탐지 가능 (Layering Chain, Cycle)
+
+---
+
+### 주소 분석 API (`POST /api/analyze/address`)
+
+**요청 예시 - 옵션 A (기존 방식)**:
+
+```json
+{
+  "address": "0xTarget",
+  "chain_id": 1,
+  "transactions": [
+    {
+      "tx_hash": "0x123...",
+      "chain_id": 1,
+      "timestamp": "2025-11-17T12:34:56Z",
+      "block_height": 21039493,
+      "target_address": "0xTarget",
+      "counterparty_address": "0xMixer1",
+      "label": "mixer",
+      "is_sanctioned": false,
+      "is_known_scam": false,
+      "is_mixer": true,
+      "is_bridge": false,
+      "amount_usd": 5000.0,
+      "asset_contract": "0xETH"
+    }
+  ],
+  "analysis_type": "basic"
+}
+```
+
+**요청 예시 - 옵션 B (Multi-hop 방식, 권장)**:
+
+```json
+{
+  "address": "0xTarget",
+  "chain_id": 1,
+  "max_hops": 3,
+  "analysis_type": "advanced"
 }
 ```
 

@@ -12,11 +12,15 @@ CEX를 위한 주소 추적 및 리스크 스코어링 시스템
 
 ### 주요 기능
 
-- 주소 기반 리스크 분석: 주소의 거래 히스토리를 분석하여 리스크 스코어 계산
-- 기본 스코어링: 빠른 응답 (1-2초), 기본 룰만 평가
-- 심층 분석: 느린 응답 (5-30초), 모든 룰 평가 (그래프 구조 분석 포함)
-- TRACE-X 룰북 기반: Compliance, Exposure, Behavior 3축 룰 평가
-- OFAC SDN 리스트 통합: 제재 대상 주소 자동 탐지
+- **주소 기반 리스크 분석**: 주소의 거래 히스토리를 분석하여 리스크 스코어 계산
+- **2가지 분석 모드**:
+  - **기본 모드 (1-hop)**: 빠른 응답 (1-2초), 실시간 대시보드 적합
+  - **Multi-hop 모드 (3-hop)**: 정밀 분석 (3-8초), 복잡한 패턴 탐지 (정확도 30-50% 향상)
+- **TRACE-X 룰북 기반**: Compliance, Exposure, Behavior 3축 룰 평가
+- **그래프 패턴 탐지**: Layering Chain, Cycle, Fan-in/Fan-out 등
+- **OFAC SDN 리스트 통합**: 제재 대상 주소 자동 탐지
+
+> 💡 **Multi-hop 모드 권장**: 복잡한 세탁 패턴 탐지를 위해 Multi-hop 모드 사용을 권장합니다. 자세한 내용은 `docs/FINAL_API_SPEC.md` 참고.
 
 ---
 
@@ -58,9 +62,15 @@ python3 run_server.py
 
 **엔드포인트**: `POST /api/analyze/address`
 
-**요청 예시** (최소 필수 필드):
+리스크 스코어링 API는 **2가지 모드**를 지원합니다:
+
+#### 옵션 A: 기본 모드 (1-hop, 빠름)
+
+**프론트엔드가 `transactions` 제공 (기존 방식)**:
 
 ```json
+POST /api/analyze/address
+
 {
   "address": "0xhigh_risk_mixer_sanctioned",
   "chain_id": 1,
@@ -79,41 +89,58 @@ python3 run_server.py
       "is_bridge": false,
       "amount_usd": 5000.0,
       "asset_contract": "0xETH"
-    }
-  ]
-}
-```
-
-**요청 예시** (선택 필드 포함):
-
-```json
-{
-  "address": "0xhigh_risk_mixer_sanctioned",
-  "chain_id": 1,
-  "transactions": [
+    },
     {
-      "tx_hash": "0xtx1_mixer",
+      "tx_hash": "0xtx2_sanctioned",
       "chain_id": 1,
-      "timestamp": "2025-11-15T00:27:17.865209Z",
-      "block_height": 1000,
+      "timestamp": "2024-01-01T10:30:00Z",
+      "block_height": 1001,
       "target_address": "0xhigh_risk_mixer_sanctioned",
-      "counterparty_address": "0xmixer_service_123",
-      "label": "mixer",
-      "is_sanctioned": false,
+      "counterparty_address": "0xsanctioned_address_ofac",
+      "label": "unknown",
+      "is_sanctioned": true,
       "is_known_scam": false,
-      "is_mixer": true,
+      "is_mixer": false,
       "is_bridge": false,
-      "amount_usd": 5000.0,
+      "amount_usd": 3000.0,
       "asset_contract": "0xETH"
     }
   ],
-  "analysis_type": "basic",
-  "time_range": {
-    "start": "2024-01-01T00:00:00Z",
-    "end": "2024-12-31T23:59:59Z"
-  }
+  "analysis_type": "basic"
 }
 ```
+
+**특징**:
+
+- ✅ 응답 시간: 1-2초
+- ✅ 실시간 대시보드에 적합
+- ⚠️ 1-hop 분석만 가능 (단순 패턴만 탐지)
+
+---
+
+#### 옵션 B: Multi-hop 모드 (3-hop, 정밀) ⭐️ 권장
+
+**백엔드가 `transactions` 자동 수집 (신규 방식)**:
+
+```json
+POST /api/analyze/address
+
+{
+  "address": "0xhigh_risk_mixer_sanctioned",
+  "chain_id": 1,
+  "max_hops": 3,
+  "analysis_type": "advanced",
+  "time_window_hours": 24
+}
+```
+
+**특징**:
+
+- ✅ 응답 시간: 3-8초 (캐싱 시)
+- ✅ 복잡한 세탁 패턴 탐지 (Layering Chain, Cycle)
+- ✅ 정확도 30-50% 향상
+- ✅ 그래프 구조 분석 (B-201, B-202 룰 활성화)
+- ⚠️ 백엔드 구현 필요 (Multi-hop 수집)
 
 **응답 예시**:
 
@@ -191,31 +218,56 @@ python3 run_server.py
 }
 ```
 
-### 필수 필드
+### 필수 파라미터
 
-- `address`: 분석 대상 주소
-- `chain_id`: 체인 ID (숫자 형식, 예: 1, 42161, 43114)
-- `transactions`: 거래 히스토리 배열
-  - 각 트랜잭션 객체에도 `chain_id`가 필요하며 숫자 형식이어야 합니다
-  - 각 트랜잭션의 필수 필드: `tx_hash`, `chain_id`, `timestamp`, `block_height`, `target_address`, `counterparty_address`, `label`, `is_sanctioned`, `is_known_scam`, `is_mixer`, `is_bridge`, `amount_usd`, `asset_contract`
+| 파라미터   | 타입    | 설명                           |
+| ---------- | ------- | ------------------------------ |
+| `address`  | string  | 분석 대상 주소                 |
+| `chain_id` | integer | 체인 ID (숫자, 예: 1=Ethereum) |
 
-### 선택 필드
+### 선택 파라미터
 
-- `analysis_type`: 분석 타입
-  - `"basic"` (기본값): 빠른 분석 (1-2초), 기본 룰만 평가
-  - `"advanced"`: 정밀 분석 (5-30초), 모든 룰 평가 (그래프 구조 분석 포함)
-- `time_range`: 시간 범위 필터링
-  - `start`: 시작 시간 (ISO8601 UTC 형식)
-  - `end`: 종료 시간 (ISO8601 UTC 형식)
-  - 예: `{"start": "2024-01-01T00:00:00Z", "end": "2024-12-31T23:59:59Z"}`
+| 파라미터            | 타입    | 기본값  | 설명                              |
+| ------------------- | ------- | ------- | --------------------------------- |
+| `transactions`      | array   | -       | 거래 히스토리 (옵션 A에서 필수)   |
+| `max_hops`          | integer | 1       | 최대 홉 수 (1~3, 옵션 B에서 필수) |
+| `analysis_type`     | string  | "basic" | "basic" 또는 "advanced"           |
+| `time_window_hours` | integer | -       | 최근 N시간 거래만 수집            |
+| `time_range`        | object  | -       | 시간 범위 필터                    |
+
+### 거래 데이터 구조 (옵션 A)
+
+```json
+{
+  "tx_hash": "0x123...",
+  "chain_id": 1,
+  "timestamp": "2025-11-17T12:34:56Z",
+  "block_height": 21039493,
+  "target_address": "0xTarget",
+  "counterparty_address": "0xMixer1",
+  "label": "mixer",
+  "is_sanctioned": false,
+  "is_known_scam": false,
+  "is_mixer": true,
+  "is_bridge": false,
+  "amount_usd": 5000.0,
+  "asset_contract": "0xETH"
+}
+```
 
 ### 중요 사항
 
-1. **chain_id는 숫자 형식**: `1` (Ethereum), `42161` (Arbitrum), `43114` (Avalanche) 등
-2. **transactions 배열 내부도 chain_id 숫자**: 각 트랜잭션 객체에도 `chain_id`가 필요하며 숫자 형식이어야 합니다
-3. **time_range 사용 시**: 백엔드에서 해당 시간 범위의 트랜잭션만 필터링해서 보내야 합니다
+1. **chain_id는 숫자**: `1` (Ethereum), `42161` (Arbitrum), `43114` (Avalanche) 등
+2. **2가지 모드 지원**:
+   - **기본 모드**: `transactions` 제공 (빠름, 1-2초)
+   - **Multi-hop 모드**: `max_hops` 제공, 백엔드가 수집 (정밀, 3-8초)
+3. **Multi-hop 장점**: 복잡한 세탁 패턴 탐지 (Layering Chain, Cycle), 정확도 30-50% 향상
 
-자세한 내용은 `docs/API_DOCUMENTATION.md`, `docs/CORRECT_INPUT_FORMAT.md`, `docs/OPTIONAL_FIELDS_EXPLANATION.md`를 참고하세요.
+자세한 내용은 다음 문서를 참고하세요:
+
+- `docs/FINAL_API_SPEC.md` - 최종 API 스펙 (Multi-hop 지원)
+- `docs/CORRECT_INPUT_FORMAT.md` - 올바른 입력 포맷
+- `docs/MULTI_HOP_REQUIREMENT.md` - Multi-hop 요구사항
 
 ---
 
@@ -325,11 +377,21 @@ curl -X POST http://localhost:5001/api/score/transaction \
 
 ### 핵심 문서
 
+- **FINAL_API_SPEC.md** ⭐️ - 최종 API 스펙 (Multi-hop 지원)
+- **QUICK_START_MULTIHOP.md** - Multi-hop 빠른 시작 가이드
 - **API_DOCUMENTATION.md** - 전체 API 문서
 - **RISK_SCORING_IO.md** - 리스크 스코어링 엔진 입출력 명세
-- **DEPLOYMENT_GUIDE.md** - 배포 가이드 (백엔드 팀용)
 - **CORRECT_INPUT_FORMAT.md** - 올바른 입력 포맷 가이드
+- **DEPLOYMENT_GUIDE.md** - 배포 가이드 (백엔드 팀용)
 - **QUICK_TEST_GUIDE.md** - 빠른 테스트 가이드
+
+### Multi-Hop 관련 문서 (백엔드 팀용)
+
+- **MULTI_HOP_REQUIREMENT.md** - Multi-hop 요구사항 (상세)
+- **BACKEND_REQUEST_MULTI_HOP.md** - 백엔드 구현 가이드
+- **SIMPLE_COMPARISON_1HOP_VS_MULTIHOP.md** - 1-hop vs Multi-hop 비교
+- **ELEVATOR_PITCH_MULTIHOP.md** - 엘리베이터 피치 (30초 요약)
+- **PARAMETER_CHANGES_SUMMARY.md** - 파라미터 변경 요약
 
 ### 논문
 
