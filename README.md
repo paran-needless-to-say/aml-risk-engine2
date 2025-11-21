@@ -80,6 +80,8 @@ POST /api/analyze/address
       "chain_id": 1,
       "timestamp": "2025-11-15T00:27:17.865209Z",
       "block_height": 1000,
+      "from": "0xmixer_service_123",              // 송신: Mixer
+      "to": "0xhigh_risk_mixer_sanctioned",       // 수신: Target (유입!)
       "target_address": "0xhigh_risk_mixer_sanctioned",
       "counterparty_address": "0xmixer_service_123",
       "label": "mixer",
@@ -95,6 +97,8 @@ POST /api/analyze/address
       "chain_id": 1,
       "timestamp": "2024-01-01T10:30:00Z",
       "block_height": 1001,
+      "from": "0xsanctioned_address_ofac",        // 송신: 제재 주소
+      "to": "0xhigh_risk_mixer_sanctioned",       // 수신: Target (유입!)
       "target_address": "0xhigh_risk_mixer_sanctioned",
       "counterparty_address": "0xsanctioned_address_ofac",
       "label": "unknown",
@@ -109,6 +113,11 @@ POST /api/analyze/address
   "analysis_type": "basic"
 }
 ```
+
+**💡 거래 방향 설명**:
+
+- **거래 1**: `Mixer (0xmixer...) → Target (0xhigh_risk...)` - Mixer에서 Target으로 5000 USD 유입
+- **거래 2**: `제재 주소 (0xsanctioned...) → Target (0xhigh_risk...)` - 제재 주소에서 Target으로 3000 USD 유입
 
 **특징**:
 
