@@ -469,35 +469,34 @@ curl -X POST http://localhost:5001/api/score/transaction \
 
 ## 문서
 
-### 핵심 문서
+### 핵심 문서 (7개)
+
+모든 문서는 `docs/` 폴더에 있습니다. **`docs/README.md`**에서 문서 가이드를 확인하세요.
+
+#### 시작하기
+
+- **README.md** (현재 파일) - 프로젝트 개요 및 빠른 시작
+- **QUICK_TEST_GUIDE.md** - 빠른 테스트 가이드 (Swagger UI 사용법)
+
+#### API 사용
 
 - **FINAL_API_SPEC.md** ⭐️ - 최종 API 스펙 (Multi-hop 지원)
-- **QUICK_START_MULTIHOP.md** - Multi-hop 빠른 시작 가이드
 - **API_DOCUMENTATION.md** - 전체 API 문서
 - **RISK_SCORING_IO.md** - 리스크 스코어링 엔진 입출력 명세
-- **CORRECT_INPUT_FORMAT.md** - 올바른 입력 포맷 가이드
+
+#### 룰북
+
+- **RULEBOOK_DETAILED.md** ⭐️ - TRACE-X 룰북 상세 설명 (22개 룰 전체)
+
+#### 배포
+
 - **DEPLOYMENT_GUIDE.md** - 배포 가이드 (백엔드 팀용)
-- **QUICK_TEST_GUIDE.md** - 빠른 테스트 가이드
 
-### Multi-Hop 관련 문서 (백엔드 팀용)
+### 상세 문서
 
-- **MULTI_HOP_REQUIREMENT.md** - Multi-hop 요구사항 (상세)
-- **BACKEND_REQUEST_MULTI_HOP.md** - 백엔드 구현 가이드
-- **SIMPLE_COMPARISON_1HOP_VS_MULTIHOP.md** - 1-hop vs Multi-hop 비교
-- **ELEVATOR_PITCH_MULTIHOP.md** - 엘리베이터 피치 (30초 요약)
-- **PARAMETER_CHANGES_SUMMARY.md** - 파라미터 변경 요약
+상세한 구현 가이드, 논문, Multi-hop 관련 문서 등은 `docs/archive/` 폴더에 보관되어 있습니다.
 
-### 논문
-
-- **PAPER_KR.md** - 논문 (한국어)
-- **PAPER.md** - 논문 (영어)
-
-### 프로젝트 소개
-
-- **PROJECT_INTRODUCTION.md** - 프로젝트 상세 소개
-- **SYSTEM_OVERVIEW.md** - 시스템 개요 및 아키텍처
-
-모든 문서는 `docs/` 폴더에 있습니다. `docs/README.md`에서 문서 가이드를 확인할 수 있습니다.
+**문서 읽기 순서**: `docs/README.md` 참고
 
 ---
 
