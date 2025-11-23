@@ -16,6 +16,7 @@
 ### 3. 룰북
 
 - **RULEBOOK_DETAILED.md** ⭐ - TRACE-X 룰북 상세 설명 (22개 룰 전체 설명)
+- **ACTIVE_RULES.md** - 구현된 룰 목록 (Basic/Advanced 모드별)
 
 ### 4. 배포
 
@@ -89,6 +90,7 @@
 | **API_DOCUMENTATION.md** | API 상세 문서 | 백엔드 개발자 |
 | **RISK_SCORING_IO.md**   | 입출력 명세   | 백엔드 개발자 |
 | **RULEBOOK_DETAILED.md** | 룰 상세 설명  | 개발자/분석가 |
+| **ACTIVE_RULES.md**      | 구현된 룰 목록 | 개발자/분석가 |
 | **DEPLOYMENT_GUIDE.md**  | 배포 가이드   | 운영자        |
 
 ---
