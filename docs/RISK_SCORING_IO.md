@@ -1,6 +1,6 @@
 # 리스크 스코어링 엔진 입출력 명세
 
-## 입력 (Input)
+## 📥 입력 (Input)
 
 리스크 스코어링 API는 **2가지 모드**를 지원합니다:
 
@@ -19,7 +19,7 @@ POST /api/analyze/address
 }
 ```
 
-### 모드 2: Multi-hop 모드 (3-hop, 정밀) - 권장
+### 모드 2: Multi-hop 모드 (3-hop, 정밀) ⭐️ 권장
 
 백엔드가 `transactions` 자동 수집:
 
@@ -64,9 +64,9 @@ class TransactionInput:
 @dataclass
 class TransactionInputMultiHop:
     # 기존 필드 모두 포함 +
-    hop_level: int                  # 몇 번째 홉인지 (1, 2, 3)
-    from_address: str               # 송신자 (명확)
-    to_address: str                 # 수신자 (명확)
+    hop_level: int                  # 🆕 몇 번째 홉인지 (1, 2, 3)
+    from_address: str               # 🆕 송신자 (명확)
+    to_address: str                 # 🆕 수신자 (명확)
 ```
 
 ### JSON 요청 예시 - 기존 방식
@@ -97,9 +97,9 @@ class TransactionInputMultiHop:
   "chain_id": 1,
   "timestamp": "2025-11-17T12:34:56Z",
   "block_height": 21039493,
-  "hop_level": 1,
-  "from": "0xTarget",
-  "to": "0xMixer1",
+  "hop_level": 1, // 🆕
+  "from": "0xTarget", // 🆕
+  "to": "0xMixer1", // 🆕
   "label": "mixer",
   "is_sanctioned": false,
   "is_known_scam": false,
@@ -171,7 +171,7 @@ class FiredRule:
 
 ---
 
-## 리스크 레벨 매핑
+## 🎯 리스크 레벨 매핑
 
 리스크 점수에 따른 레벨 분류:
 
@@ -182,7 +182,7 @@ class FiredRule:
 
 ---
 
-## Risk Tags 종류
+## 📋 Risk Tags 종류
 
 가능한 리스크 태그들:
 
@@ -234,7 +234,7 @@ POST /api/analyze/address
 - `transactions[]` (필수): TransactionInput 배열
 - `analysis_type` (선택): "basic" (기본값)
 
-#### 모드 2: Multi-hop 모드 (3-hop)
+#### 모드 2: Multi-hop 모드 (3-hop) ⭐️
 
 입력:
 
@@ -246,7 +246,7 @@ POST /api/analyze/address
 
 ---
 
-## 참고사항
+## 💡 참고사항
 
 - `risk_score`는 0~100 사이의 연속값입니다 (정수로 반환)
 - `timestamp`와 `completed_at`은 ISO8601 UTC 형식을 사용합니다
