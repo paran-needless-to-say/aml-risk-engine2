@@ -1,6 +1,6 @@
 # 문서 가이드
 
-## 📚 핵심 문서 (8개)
+## 핵심 문서 (8개)
 
 ### 1. 시작하기
 
@@ -9,18 +9,18 @@
 
 ### 2. API 사용
 
-- **FINAL_API_SPEC.md** ⭐ - 최종 API 스펙 (Multi-hop 지원)
+- **FINAL_API_SPEC.md** - 최종 API 스펙 (Multi-hop 지원)
 - **API_DOCUMENTATION.md** - 전체 API 문서
 - **RISK_SCORING_IO.md** - 리스크 스코어링 엔진 입출력 명세
 
 ### 3. 룰북
 
-- **RULEBOOK_DETAILED.md** ⭐ - TRACE-X 룰북 상세 설명 (22개 룰 전체 설명)
+- **RULEBOOK_DETAILED.md** - TRACE-X 룰북 상세 설명 (22개 룰 전체 설명)
 - **ACTIVE_RULES.md** - 구현된 룰 목록 (Basic/Advanced 모드별)
 
 ### 4. 성능 평가
 
-- **PERFORMANCE_EVALUATION.md** ⭐ - 성능 평가 및 실험 결과 (데이터셋, 성능 지표, Baseline 비교)
+- **PERFORMANCE_EVALUATION.md** - 성능 평가 및 실험 결과 (데이터셋, 성능 지표, Baseline 비교)
 
 ### 5. 배포
 
@@ -28,7 +28,7 @@
 
 ---
 
-## 📖 문서 읽기 순서
+## 문서 읽기 순서
 
 ### 빠른 시작 (5분)
 
@@ -54,7 +54,7 @@
 
 ---
 
-## 📁 Archive 폴더
+## Archive 폴더
 
 상세한 구현 가이드 및 참고 문서는 `archive/` 폴더에 보관되어 있습니다:
 
@@ -70,37 +70,37 @@
 
 ---
 
-## 💡 핵심 문서 우선순위
+## 핵심 문서 우선순위
 
-### ⭐ 필수 읽기 (처음 사용자)
+### 필수 읽기 (처음 사용자)
 
 1. **README.md** (프로젝트 루트) - 프로젝트 이해
 2. **QUICK_TEST_GUIDE.md** - API 테스트 방법
 3. **FINAL_API_SPEC.md** - API 사용법
 
-### 📖 룰 이해 (개발자)
+### 룰 이해 (개발자)
 
 1. **RULEBOOK_DETAILED.md** - 룰 상세 설명
 
-### 🚀 배포 (운영자)
+### 배포 (운영자)
 
 1. **DEPLOYMENT_GUIDE.md** - 배포 가이드
 
 ---
 
-## 📋 문서 요약
+## 문서 요약
 
-| 문서                     | 용도           | 대상          |
-| ------------------------ | -------------- | ------------- |
-| **README.md**            | 프로젝트 개요  | 모든 사용자   |
-| **QUICK_TEST_GUIDE.md**  | 빠른 테스트    | 개발자        |
-| **FINAL_API_SPEC.md**    | API 스펙       | 백엔드 개발자 |
-| **API_DOCUMENTATION.md** | API 상세 문서  | 백엔드 개발자 |
-| **RISK_SCORING_IO.md**   | 입출력 명세    | 백엔드 개발자 |
-| **RULEBOOK_DETAILED.md** | 룰 상세 설명   | 개발자/분석가 |
-| **ACTIVE_RULES.md**      | 구현된 룰 목록 | 개발자/분석가 |
+| 문서                          | 용도           | 대상          |
+| ----------------------------- | -------------- | ------------- |
+| **README.md**                 | 프로젝트 개요  | 모든 사용자   |
+| **QUICK_TEST_GUIDE.md**       | 빠른 테스트    | 개발자        |
+| **FINAL_API_SPEC.md**         | API 스펙       | 백엔드 개발자 |
+| **API_DOCUMENTATION.md**      | API 상세 문서  | 백엔드 개발자 |
+| **RISK_SCORING_IO.md**        | 입출력 명세    | 백엔드 개발자 |
+| **RULEBOOK_DETAILED.md**      | 룰 상세 설명   | 개발자/분석가 |
+| **ACTIVE_RULES.md**           | 구현된 룰 목록 | 개발자/분석가 |
 | **PERFORMANCE_EVALUATION.md** | 성능 평가 결과 | 연구자/분석가 |
-| **DEPLOYMENT_GUIDE.md**  | 배포 가이드    | 운영자        |
+| **DEPLOYMENT_GUIDE.md**       | 배포 가이드    | 운영자        |
 
 ---
 

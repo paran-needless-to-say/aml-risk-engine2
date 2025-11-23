@@ -2,7 +2,7 @@
 
 API를 빠르게 테스트하는 방법입니다.
 
-## 🚀 서버 실행 확인
+## 서버 실행 확인
 
 ```bash
 # 서버가 실행 중인지 확인
@@ -20,9 +20,9 @@ curl http://localhost:5002/health
 
 ---
 
-## 📝 테스트 방법
+## 테스트 방법
 
-### 방법 1: Swagger UI (가장 쉬움) ⭐
+### 방법 1: Swagger UI (가장 쉬움)
 
 1. 브라우저에서 접속:
 
@@ -155,7 +155,7 @@ curl -X POST http://localhost:5002/api/score/transaction \
 
 ---
 
-## ✅ 예상 결과
+## 예상 결과
 
 ### High Risk 주소 테스트
 
@@ -182,7 +182,7 @@ curl -X POST http://localhost:5002/api/score/transaction \
 
 ---
 
-## 🧪 다양한 시나리오 테스트
+## 다양한 시나리오 테스트
 
 ### 1. Low Risk (정상 거래)
 
@@ -242,7 +242,7 @@ curl -X POST http://localhost:5002/api/score/transaction \
 
 ---
 
-## 💡 테스트 팁
+## 테스트 팁
 
 1. **Swagger UI 사용**: 가장 쉽고 직관적
 2. **JSON 포맷 확인**: `chain_id`는 숫자로!
@@ -251,7 +251,7 @@ curl -X POST http://localhost:5002/api/score/transaction \
 
 ---
 
-## ❓ 문제 해결
+## 문제 해결
 
 ### "Method Not Allowed" 에러
 

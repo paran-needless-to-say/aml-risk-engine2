@@ -1,6 +1,6 @@
 # TRACE-X 리스크 스코어링 룰북 (상세 설명)
 
-## 📋 목차
+## 목차
 
 1. [개요](#개요)
 2. [룰 축(Axis) 설명](#룰-축axis-설명)
@@ -25,17 +25,23 @@ TRACE-X 룰북은 블록체인 주소의 리스크를 평가하기 위한 22개�
 ## 룰 축(Axis) 설명
 
 ### C축 (Compliance) - 규정 준수
+
 제재 리스트, 고액 거래 등 **규정 준수 관련 리스크**를 평가합니다.
+
 - **목적**: AML 규정 위반 가능성 탐지
 - **주요 요소**: SDN 리스트, 고액 거래, VASP 관할권
 
 ### E축 (Exposure) - 위험 노출
+
 믹서, 브릿지, 사기 주소 등 **위험 요소에 대한 직접적/간접적 노출**을 평가합니다.
+
 - **목적**: 세탁 도구나 불법 자금 노출 탐지
 - **주요 요소**: Mixer, Bridge, Scam, 제재 주소 노출
 
 ### B축 (Behavior) - 행동 패턴
+
 거래 패턴, 그래프 구조 등 **의심스러운 행동 패턴**을 평가합니다.
+
 - **목적**: 머니 세탁 전형적 패턴 탐지
 - **주요 요소**: Burst, Cycle, Layering Chain, Fan-in/out
 
@@ -49,26 +55,31 @@ TRACE-X 룰북은 블록체인 주소의 리스크를 평가하기 위한 22개�
 **축**: C (Compliance)  
 **Severity**: HIGH  
 **점수**: 30점  
-**구현 상태**: ✅ 구현됨
+**구현 상태**: 구현됨
 
-#### 📝 설명
+#### 설명
+
 OFAC SDN (Specially Designated Nationals) 리스트에 등재된 주소와 **직접적인 거래**를 탐지합니다. 이는 가장 심각한 규정 위반 위험 신호입니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 1. **매칭 조건** (둘 중 하나):
    - `from` 주소가 `SDN_LIST`에 포함
    - `to` 주소가 `SDN_LIST`에 포함
 2. **조건** (모두 만족):
    - 거래 금액 (`usd_value`) ≥ 1 USD
 
-#### ⚠️ 예외 사항
+#### 예외 사항
+
 다음 중 하나라도 해당되면 룰 발동 안 함:
+
 - `from` 주소에 `CEX_INTERNAL` 태그가 true
 - `to` 주소에 `CEX_INTERNAL` 태그가 true
 
 **목적**: 거래소 내부 거래는 제외
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # evaluator.py _eval_single_match()
 if list_name == "SDN_LIST":
@@ -80,11 +91,12 @@ if list_name == "SDN_LIST":
         return True
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 거래: 0xSANCTIONED_ADDRESS → 0xTARGET_ADDRESS
 금액: 5,000 USD
-결과: C-001 발동 (30점) ✅
+결과: C-001 발동 (30점)
 ```
 
 ---
@@ -95,12 +107,14 @@ if list_name == "SDN_LIST":
 **축**: C (Compliance)  
 **Severity**: MEDIUM  
 **점수**: 20점  
-**구현 상태**: ✅ 구현됨 (조건부: 백엔드에서 counterparty 태그 필요)
+**구현 상태**: 구현됨 (조건부: 백엔드에서 counterparty 태그 필요)
 
-#### 📝 설명
+#### 설명
+
 고위험 관할권(이란, 러시아, 북한)의 VASP(가상자산 서비스 제공자)와의 거래를 탐지합니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 1. **매칭 조건**:
    - `counterparty` 주소의 `country` 태그가 다음 중 하나:
      - `IR` (이란)
@@ -109,10 +123,12 @@ if list_name == "SDN_LIST":
 2. **조건**:
    - `counterparty`의 `type` 태그가 `VASP`
 
-#### ⚠️ 예외 사항
+#### 예외 사항
+
 - `counterparty`에 `safe_vasp` 태그가 true면 발동 안 함
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # tag 기반 조건 평가
 if tx_data.get("counterparty", {}).get("country") in ["IR", "RU", "KP"]:
@@ -121,7 +137,8 @@ if tx_data.get("counterparty", {}).get("country") in ["IR", "RU", "KP"]:
             # 룰 발동
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 거래: 0xTARGET → 이란 거래소 주소
 상대방 타입: VASP
@@ -137,27 +154,32 @@ if tx_data.get("counterparty", {}).get("country") in ["IR", "RU", "KP"]:
 **축**: C (Compliance)  
 **Severity**: MEDIUM  
 **점수**: 25점  
-**구현 상태**: ✅ 구현됨
+**구현 상태**: 구현됨
 
-#### 📝 설명
+#### 설명
+
 단일 거래에서 **고액 거래**를 탐지합니다. AML 규정상 고액 거래는 보고 대상입니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 - 거래 금액 (`usd_value`) ≥ 3,000 USD
 
-#### ⚠️ 예외 사항
+#### 예외 사항
+
 - `from` 또는 `to` 주소에 `CEX_INTERNAL` 태그가 true면 발동 안 함
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # 단일 트랜잭션 룰 평가
 if float(tx_data.get("usd_value", 0)) >= 3000:
-    if not (tx_data.get("from", {}).get("CEX_INTERNAL") or 
+    if not (tx_data.get("from", {}).get("CEX_INTERNAL") or
             tx_data.get("to", {}).get("CEX_INTERNAL")):
         # 룰 발동
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 거래: 0xSENDER → 0xTARGET
 금액: 5,000 USD (단일 거래)
@@ -172,31 +194,36 @@ if float(tx_data.get("usd_value", 0)) >= 3000:
 **축**: C (Compliance)  
 **Severity**: MEDIUM  
 **점수**: 20점  
-**구현 상태**: ✅ 구현됨 (윈도우 룰)
+**구현 상태**: 구현됨 (윈도우 룰)
 
-#### 📝 설명
+#### 설명
+
 24시간 내에 **고액 거래가 반복**되는 패턴을 탐지합니다. Structuring (금액 분할) 의심 신호입니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 **윈도우**: 24시간 (86,400초)  
 **그룹화**: 주소별
 
 **집계 조건** (모두 만족):
+
 - 거래 금액 합계 ≥ 5,000 USD
 - 거래 횟수 ≥ 2회
 - 각 거래 금액 ≥ 1,000 USD
 
-#### ⚠️ 예외 사항
+#### 예외 사항
+
 - 주소에 `MM_BOT` (Market Maker Bot) 태그가 true
 - 주소에 `CEX_INTERNAL` 태그가 true
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # aggregation/window.py
 window = WindowEvaluator()
 # 24시간 윈도우에서 주소별 거래 그룹화
 transactions = window.get_transactions_in_window(
-    address, 
+    address,
     duration_sec=86400
 )
 # 집계 조건 확인
@@ -208,7 +235,8 @@ if total_usd >= 5000 and count >= 2 and min_usd >= 1000:
     # 룰 발동
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 주소: 0xTARGET
 거래 1: +3,000 USD (2025-01-01 10:00)
@@ -227,21 +255,25 @@ if total_usd >= 5000 and count >= 2 and min_usd >= 1000:
 **축**: E (Exposure)  
 **Severity**: HIGH  
 **점수**: 32점  
-**구현 상태**: ✅ 구현됨
+**구현 상태**: 구현됨
 
-#### 📝 설명
+#### 설명
+
 믹서(Mixer/Tumbler) 서비스에서 **직접 유입**된 자금을 탐지합니다. 믹서는 익명성 강화 도구로 세탁에 악용됩니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 1. **매칭 조건**:
    - `from` 주소가 `MIXER_LIST`에 포함 (또는 `is_mixer` 플래그가 true)
 2. **조건**:
    - 거래 금액 (`usd_value`) ≥ 20 USD
 
-#### ⚠️ 예외 사항
+#### 예외 사항
+
 - 주소에 `REWARD_PAYOUT` 태그가 true (리워드 지급은 정상적일 수 있음)
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # evaluator.py _eval_single_match()
 if list_name == "MIXER_LIST":
@@ -253,7 +285,8 @@ if list_name == "MIXER_LIST":
         return True
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 거래: 0xMIXER_SERVICE → 0xTARGET_ADDRESS
 금액: 100 USD
@@ -268,21 +301,25 @@ if list_name == "MIXER_LIST":
 **축**: E (Exposure)  
 **Severity**: HIGH  
 **점수**: 39점 (가장 높은 점수)  
-**구현 상태**: ✅ 구현됨 (PPR 기반)
+**구현 상태**: 구현됨 (PPR 기반)
 
-#### 📝 설명
+#### 설명
+
 제재 주소와 **간접적으로 연결**된 경우를 탐지합니다. PPR (Personalized PageRank) 알고리즘으로 2-hop 이내 연결성을 계산합니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 1. **매칭 조건**:
    - PPR 값 ≥ 0.05 (간접 연결성 임계값)
 2. **조건**:
    - 거래 금액 (`usd_value`) ≥ 40 USD
 
-#### ⚠️ 예외 사항
+#### 예외 사항
+
 - 주소에 `CEX_INTERNAL` 태그가 true
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # evaluator.py _evaluate_e102_with_ppr()
 # 1. 트랜잭션 히스토리로 그래프 구축
@@ -303,7 +340,8 @@ if ppr_result["total_ppr"] >= 0.05:
     # 룰 발동
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 경로: 0xSANCTIONED → 0xINTERMEDIARY → 0xTARGET
 PPR 값: 0.08 (0.05 이상)
@@ -320,20 +358,24 @@ PPR 값: 0.08 (0.05 이상)
 **점수**: 19점  
 **구현 상태**: ⚠️ 조건부 (백엔드 데이터 필요)
 
-#### 📝 설명
+#### 설명
+
 상대방 주소의 리스크 스코어가 높은 경우를 탐지합니다. 높은 리스크 주소와의 거래는 위험 신호입니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 - `counterparty.risk_score` ≥ 0.7 (70점 이상)
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # 백엔드에서 counterparty.risk_score 제공 필요
 if tx_data.get("counterparty", {}).get("risk_score", 0) >= 0.7:
     # 룰 발동
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 거래: 0xHIGH_RISK_ADDRESS (risk_score: 0.85) → 0xTARGET
 결과: E-103 발동 (19점) ✅
@@ -349,22 +391,26 @@ if tx_data.get("counterparty", {}).get("risk_score", 0) >= 0.7:
 **축**: E (Exposure)  
 **Severity**: MEDIUM  
 **점수**: 19점  
-**구현 상태**: ✅ 구현됨
+**구현 상태**: 구현됨
 
-#### 📝 설명
+#### 설명
+
 브릿지(Bridge) 컨트랙트와 직접 거래한 경우를 탐지합니다. 브릿지는 자금 이전 경로를 복잡하게 만듭니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 1. **매칭 조건** (둘 중 하나):
    - `from` 주소가 `BRIDGE_LIST`에 포함
    - `to` 주소가 `BRIDGE_LIST`에 포함
 2. **조건**:
    - 거래 금액 (`usd_value`) ≥ 20 USD
 
-#### ⚠️ 예외 사항
+#### 예외 사항
+
 - `from` 또는 `to` 주소에 `CEX_INTERNAL` 태그가 true
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # BRIDGE_LIST에서 확인
 if tx_data.get("from") in bridge_list or tx_data.get("to") in bridge_list:
@@ -372,7 +418,8 @@ if tx_data.get("from") in bridge_list or tx_data.get("to") in bridge_list:
         # 룰 발동
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 거래: 0xBRIDGE_CONTRACT → 0xTARGET
 금액: 50 USD
@@ -387,22 +434,26 @@ if tx_data.get("from") in bridge_list or tx_data.get("to") in bridge_list:
 **축**: E (Exposure)  
 **Severity**: MEDIUM  
 **점수**: 26점  
-**구현 상태**: ✅ 구현됨
+**구현 상태**: 구현됨
 
-#### 📝 설명
+#### 설명
+
 사기 주소와 직접 거래한 경우를 탐지합니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 1. **매칭 조건** (둘 중 하나):
    - `from` 주소가 `SCAM_LIST`에 포함 (또는 `is_known_scam` 플래그가 true)
    - `to` 주소가 `SCAM_LIST`에 포함
 2. **조건**:
    - 거래 금액 (`usd_value`) ≥ 200 USD
 
-#### ⚠️ 예외 사항
+#### 예외 사항
+
 - `from` 또는 `to` 주소에 `CEX_INTERNAL` 태그가 true
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # SCAM_LIST에서 확인
 if tx_data.get("from") in scam_list or tx_data.get("to") in scam_list:
@@ -410,7 +461,8 @@ if tx_data.get("from") in scam_list or tx_data.get("to") in scam_list:
         # 룰 발동
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 거래: 0xSCAM_ADDRESS → 0xTARGET
 금액: 500 USD
@@ -427,23 +479,28 @@ if tx_data.get("from") in scam_list or tx_data.get("to") in scam_list:
 **축**: B (Behavior)  
 **Severity**: MEDIUM  
 **점수**: 15점  
-**구현 상태**: ✅ 구현됨 (윈도우 룰)
+**구현 상태**: 구현됨 (윈도우 룰)
 
-#### 📝 설명
+#### 설명
+
 10분 내에 **2회 이상** 거래가 발생하는 패턴을 탐지합니다. 짧은 시간에 집중된 거래는 의심스러울 수 있습니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 **윈도우**: 10분 (600초)  
 **그룹화**: 주소별  
 **쿨다운**: 30분 (1,800초) - 같은 패턴 중복 발동 방지
 
 **집계 조건**:
+
 - 거래 횟수 ≥ 2회
 
-#### ⚠️ 예외 사항
+#### 예외 사항
+
 - 주소에 `CEX_INTERNAL` 또는 `MM_BOT` 태그가 true
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # aggregation/window.py
 window = WindowEvaluator()
@@ -457,7 +514,8 @@ if len(transactions) >= 2:
     # 룰 발동
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 주소: 0xTARGET
 거래 1: 2025-01-01 10:00:00
@@ -473,23 +531,28 @@ if len(transactions) >= 2:
 **축**: B (Behavior)  
 **Severity**: HIGH  
 **점수**: 20점  
-**구현 상태**: ✅ 구현됨 (윈도우 룰)
+**구현 상태**: 구현됨 (윈도우 룰)
 
-#### 📝 설명
+#### 설명
+
 1분 내에 **3회 이상** 거래가 발생하는 패턴을 탐지합니다. 매우 빠른 연속 거래는 봇이나 자동화된 거래를 나타낼 수 있습니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 **윈도우**: 1분 (60초)  
 **그룹화**: 주소별  
 **쿨다운**: 15분 (900초)
 
 **집계 조건**:
+
 - 거래 횟수 ≥ 3회
 
-#### ⚠️ 예외 사항
+#### 예외 사항
+
 - 주소에 `CEX_INTERNAL` 또는 `MM_BOT` 태그가 true
 
-#### 📊 예시
+#### 예시
+
 ```
 주소: 0xTARGET
 거래 1: 2025-01-01 10:00:00
@@ -506,20 +569,25 @@ if len(transactions) >= 2:
 **축**: B (Behavior)  
 **Severity**: LOW  
 **점수**: 10점  
-**구현 상태**: ✅ 구현됨 (통계 계산)
+**구현 상태**: 구현됨 (통계 계산)
 
-#### 📝 설명
+#### 설명
+
 거래 간격의 **표준편차가 높은** 경우를 탐지합니다. 불규칙한 거래 패턴은 의심스러울 수 있습니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 **Prerequisites** (전제 조건):
+
 - 최소 5개 거래 필요
 
 **조건** (모두 만족):
+
 - 거래 간격 표준편차 (`interarrival_std`) ≥ 1.5
 - 거래 금액 (`usd_value`) ≥ 20 USD
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # evaluator.py _evaluate_b103_with_stats()
 # 1. Prerequisites 체크
@@ -536,7 +604,8 @@ if interarrival_std >= 1.5 and tx_data.get("usd_value", 0) >= 20:
     # 룰 발동
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 주소: 0xTARGET
 거래 1: 10:00
@@ -556,45 +625,51 @@ if interarrival_std >= 1.5 and tx_data.get("usd_value", 0) >= 20:
 **축**: B (Behavior)  
 **Severity**: HIGH  
 **점수**: 25점  
-**구현 상태**: ✅ 구현됨 (Advanced 모드 전용)
+**구현 상태**: 구현됨 (Advanced 모드 전용)
 
-#### 📝 설명
+#### 설명
+
 **레이어링(Layering)** 패턴을 탐지합니다. 자금이 여러 주소를 거쳐 이동하면서 추적을 어렵게 만드는 세탁 기법입니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 **Topology 조건** (모두 만족):
+
 - 같은 토큰 사용 (`same_token: true`)
 - 체인 길이 ≥ 3-hop (`hop_length_gte: 3`)
 - 각 홉 금액 변동 ≤ 5% (`hop_amount_delta_pct_lte: 5`)
 - 최소 금액 ≥ 100 USD (`min_usd_value: 100`)
 
 #### ⚠️ 모드 제한
+
 - **Basic 모드**: 발동 안 함 (성능 최적화)
 - **Advanced 모드**: 발동됨
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # aggregation/topology.py
 def evaluate_layering_chain(address, transactions, spec):
     # 1. 그래프 구축
     graph = build_graph(transactions)
-    
+
     # 2. 같은 토큰 필터링
     same_token_transactions = filter_same_token(transactions)
-    
+
     # 3. 3-hop 이상 체인 탐지
     chains = find_chains(address, graph, min_hops=3)
-    
+
     # 4. 금액 변동 확인 (각 홉 5% 이내)
     for chain in chains:
-        if all(is_amount_similar(hop1, hop2, delta_pct=5) 
+        if all(is_amount_similar(hop1, hop2, delta_pct=5)
                for hop1, hop2 in zip(chain[:-1], chain[1:])):
             return True
-    
+
     return False
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 경로: A → B → C → D (3-hop)
 토큰: USDT (같은 토큰)
@@ -610,40 +685,46 @@ def evaluate_layering_chain(address, transactions, spec):
 **축**: B (Behavior)  
 **Severity**: HIGH  
 **점수**: 30점  
-**구현 상태**: ✅ 구현됨 (Advanced 모드 전용)
+**구현 상태**: 구현됨 (Advanced 모드 전용)
 
-#### 📝 설명
+#### 설명
+
 **사이클(Cycle)** 패턴을 탐지합니다. 자금이 같은 주소들 사이를 순환하는 의심스러운 패턴입니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 **Topology 조건** (모두 만족):
+
 - 같은 토큰 사용 (`same_token: true`)
 - 사이클 길이 2 또는 3 (`cycle_length_in: [2, 3]`)
 - 사이클 총 금액 ≥ 100 USD (`cycle_total_usd_gte: 100`)
 
 #### ⚠️ 모드 제한
+
 - **Basic 모드**: 발동 안 함
 - **Advanced 모드**: 발동됨
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # aggregation/topology.py
 def evaluate_cycle(address, transactions, spec):
     # 1. 그래프 구축
     graph = build_graph(transactions)
-    
+
     # 2. 2-hop 또는 3-hop 사이클 탐지
     cycles = find_cycles(graph, lengths=[2, 3])
-    
+
     # 3. 같은 토큰 & 총 금액 확인
     for cycle in cycles:
         if is_same_token(cycle) and cycle_total_usd(cycle) >= 100:
             return True
-    
+
     return False
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 사이클: A → B → A (2-hop)
 토큰: USDT (같은 토큰)
@@ -659,21 +740,25 @@ def evaluate_cycle(address, transactions, spec):
 **축**: B (Behavior)  
 **Severity**: MEDIUM  
 **점수**: 20점  
-**구현 상태**: ✅ 구현됨 (버킷 룰)
+**구현 상태**: 구현됨 (버킷 룰)
 
-#### 📝 설명
+#### 설명
+
 10분 버킷 내에 **한 주소에서 여러 주소로 분산**되는 패턴을 탐지합니다. 자금 분산의 전형적 패턴입니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 **버킷**: 10분 (600초)  
 **그룹화**: 체인 ID, 토큰, `from` 주소별
 
 **집계 조건** (모두 만족):
+
 - 서로 다른 `to` 주소 수 ≥ 5개 (`distinct_gte: to >= 5`)
 - 총 금액 ≥ 1,000 USD (`sum_gte: usd_value >= 1000`)
 - 각 거래 금액 ≥ 100 USD (`every_gte: usd_value >= 100`)
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # aggregation/bucket.py
 bucket = BucketEvaluator()
@@ -688,12 +773,13 @@ for group in grouped:
     distinct_to = len(set(tx["to"] for tx in group))
     total_usd = sum(tx["usd_value"] for tx in group)
     min_usd = min(tx["usd_value"] for tx in group)
-    
+
     if distinct_to >= 5 and total_usd >= 1000 and min_usd >= 100:
         # 룰 발동
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 From: 0xSENDER
 10분 내 거래:
@@ -715,21 +801,25 @@ From: 0xSENDER
 **축**: B (Behavior)  
 **Severity**: MEDIUM  
 **점수**: 20점  
-**구현 상태**: ✅ 구현됨 (버킷 룰)
+**구현 상태**: 구현됨 (버킷 룰)
 
-#### 📝 설명
+#### 설명
+
 10분 버킷 내에 **여러 주소에서 한 주소로 집중**되는 패턴을 탐지합니다. 자금 집중의 전형적 패턴입니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 **버킷**: 10분 (600초)  
 **그룹화**: 체인 ID, 토큰, `to` 주소별
 
 **집계 조건** (모두 만족):
+
 - 서로 다른 `from` 주소 수 ≥ 5개 (`distinct_gte: from >= 5`)
 - 총 금액 ≥ 1,000 USD
 - 각 거래 금액 ≥ 100 USD
 
-#### 📊 예시
+#### 예시
+
 ```
 To: 0xTARGET
 10분 내 거래:
@@ -751,24 +841,27 @@ To: 0xTARGET
 **축**: B (Behavior)  
 **Severity**: MEDIUM  
 **점수**: 동적 점수 (3~30점)  
-**구현 상태**: ✅ 구현됨 (동적 점수)
+**구현 상태**: 구현됨 (동적 점수)
 
-#### 📝 설명
+#### 설명
+
 거래 금액에 따라 **동적으로 점수**를 부여합니다. 고액 거래일수록 높은 점수를 받습니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 거래 금액 (`usd_value`)에 따라 점수가 결정됩니다:
 
-| 금액 범위 | 점수 |
-|----------|------|
-| 1,000 ~ 5,000 USD | 3점 |
-| 5,000 ~ 10,000 USD | 6점 |
-| 10,000 ~ 50,000 USD | 9점 |
-| 50,000 ~ 250,000 USD | 14점 |
+| 금액 범위               | 점수 |
+| ----------------------- | ---- |
+| 1,000 ~ 5,000 USD       | 3점  |
+| 5,000 ~ 10,000 USD      | 6점  |
+| 10,000 ~ 50,000 USD     | 9점  |
+| 50,000 ~ 250,000 USD    | 14점 |
 | 250,000 ~ 1,000,000 USD | 21점 |
-| ≥ 1,000,000 USD | 30점 |
+| ≥ 1,000,000 USD         | 30점 |
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # evaluator.py 172-198줄
 buckets_spec = rule.get("buckets")
@@ -789,7 +882,8 @@ if dynamic_score > 0:
     # 룰 발동
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 거래 금액: 15,000 USD
 범위: 10,000 ~ 50,000 USD
@@ -804,23 +898,27 @@ if dynamic_score > 0:
 **축**: B (Behavior)  
 **Severity**: LOW  
 **점수**: 10점  
-**구현 상태**: ✅ 구현됨 (윈도우 룰)
+**구현 상태**: 구현됨 (윈도우 룰)
 
-#### 📝 설명
+#### 설명
+
 24시간 내에 **반올림된 금액이 반복**되는 패턴을 탐지합니다. Structuring (금액 분할) 의심 신호입니다.
 
-#### 🔍 발동 조건
+#### 발동 조건
+
 **윈도우**: 24시간 (86,400초)  
 **그룹화**: 주소별, 방향: outgoing (송금)
 
 **집계 조건**:
+
 1. 거래 중 하나라도 ≥ 10,000,000 USD
 2. 반올림된 금액으로 그룹화
 3. 각 그룹에서:
    - 거래 횟수 ≥ 5회
    - 총 금액 ≥ 10,000 USD
 
-#### 💻 구현 로직
+#### 구현 로직
+
 ```python
 # 윈도우에서 outgoing 거래만 필터링
 outgoing_txs = [tx for tx in transactions if tx["from"] == address]
@@ -833,7 +931,8 @@ for group in rounded_groups:
         # 룰 발동
 ```
 
-#### 📊 예시
+#### 예시
+
 ```
 주소: 0xTARGET (송금)
 24시간 내 거래:
@@ -854,18 +953,22 @@ for group in rounded_groups:
 다음 룰들은 YAML에 정의되어 있으나 아직 **구현되지 않았습니다**. 코드에서 `state` 필드가 있으면 건너뛰어집니다 (`evaluator.py` 74-75줄).
 
 ### B-401: First 7 Days Burst
+
 - **설명**: 주소 생성 후 7일 내 고액 거래 (10,000 USD 이상, 3회 이상)
 - **미구현 이유**: 주소의 생명주기 정보 (`first_seen_ts`, `first7d_usd` 등) 필요
 
 ### B-402: Reactivation
+
 - **설명**: 1년 이상 된 주소가 180일 비활성 후 재활성화 (1,000 USD 이상)
 - **미구현 이유**: 주소의 생명주기 정보 (`first_seen_ts`, `last_seen_ts` 등) 필요
 
 ### B-403A: Lifecycle A — Young but Busy
+
 - **설명**: 생성 30일 이내, 100회 이상 거래, 중앙값 100 USD
 - **미구현 이유**: 주소의 생명주기 정보 (`age_days`, `tx_count_30d` 등) 필요
 
 ### B-403B: Lifecycle B — Old and Rare High Value
+
 - **설명**: 1년 이상, 총 10회 이하, 총액 50,000 USD 이상
 - **미구현 이유**: 주소의 생명주기 정보 (`age_days`, `tx_count_total` 등) 필요
 
@@ -938,4 +1041,3 @@ State 룰 체크 → 건너뛰기 (미구현)
   - 18개 룰 구현 (Basic 모드)
   - 20개 룰 구현 (Advanced 모드)
   - 4개 룰 미구현 (State 룰)
-

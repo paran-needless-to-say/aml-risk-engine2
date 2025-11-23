@@ -2,7 +2,7 @@
 
 AML Risk Engine API 문서입니다. Swagger UI를 통해 인터랙티브하게 API를 테스트할 수 있습니다.
 
-## 📚 API 문서 접속
+## API 문서 접속
 
 서버 실행 후 브라우저에서 접속:
 
@@ -10,13 +10,13 @@ AML Risk Engine API 문서입니다. Swagger UI를 통해 인터랙티브하게 
 http://localhost:5000/api-docs
 ```
 
-## 🚀 서버 실행
+## 서버 실행
 
 ```bash
 python3 api/app.py
 ```
 
-## 📡 엔드포인트
+## 엔드포인트
 
 ### 1. Manual Analysis (수동 탐지)
 
@@ -125,7 +125,7 @@ python3 api/app.py
 }
 ```
 
-## 💡 Swagger UI 사용법
+## Swagger UI 사용법
 
 1. 서버 실행: `python3 api/app.py`
 2. 브라우저에서 `http://localhost:5000/api-docs` 접속
@@ -133,7 +133,7 @@ python3 api/app.py
 4. "Try it out" 버튼으로 실제 API 테스트 가능
 5. Request Body에 예시 데이터 입력 후 "Execute" 클릭
 
-## 📝 예시 요청
+## 예시 요청
 
 ### 주소 분석 API 테스트
 

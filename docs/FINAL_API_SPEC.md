@@ -1,6 +1,6 @@
 # 최종 API 스펙 (Multi-Hop 지원)
 
-## 🎯 요약
+## 요약
 
 리스크 스코어링 API의 최종 request 형식입니다. **2가지 모드**를 지원합니다:
 
@@ -44,13 +44,13 @@ POST /api/analyze/address
 
 **특징**:
 
-- ✅ 빠른 응답 (1-2초)
-- ✅ 1-hop 분석만 가능
-- ✅ 기존 시스템과 완전 호환
+- 빠른 응답 (1-2초)
+- 1-hop 분석만 가능
+- 기존 시스템과 완전 호환
 
 ---
 
-### 옵션 B: Multi-hop 모드 (신규 방식) ⭐️ 권장
+### 옵션 B: Multi-hop 모드 (신규 방식) - 권장
 
 **백엔드가 `transactions` 자동 수집**
 
@@ -68,10 +68,10 @@ POST /api/analyze/address
 
 **특징**:
 
-- ✅ 정확한 분석 (3-8초, 캐싱 시)
-- ✅ Multi-hop 그래프 패턴 탐지 가능
-- ✅ B-201 (Layering Chain), B-202 (Cycle) 룰 활성화
-- ⚠️ 백엔드에서 구현 필요
+- 정확한 분석 (3-8초, 캐싱 시)
+- Multi-hop 그래프 패턴 탐지 가능
+- B-201 (Layering Chain), B-202 (Cycle) 룰 활성화
+- 백엔드에서 구현 필요
 
 ---
 
@@ -231,7 +231,7 @@ def collect_multi_hop_transactions(address, chain_id, max_hops):
 }
 ```
 
-### 옵션 B (Multi-hop 필드) ⭐️ 권장
+### 옵션 B (Multi-hop 필드) - 권장
 
 ```json
 {
@@ -275,7 +275,7 @@ def collect_multi_hop_transactions(address, chain_id, max_hops):
 
 ---
 
-## 🎯 사용 시나리오
+## 사용 시나리오
 
 ### 시나리오 1: 실시간 대시보드 (빠른 분석)
 
@@ -325,7 +325,7 @@ def collect_multi_hop_transactions(address, chain_id, max_hops):
 
 ---
 
-## ⚠️ 중요 사항
+## 중요 사항
 
 ### 1. 하위 호환성
 
@@ -362,12 +362,12 @@ def collect_multi_hop_transactions(address, chain_id, max_hops):
 
 ---
 
-## 📈 성능 비교
+## 성능 비교
 
 | 모드               | 응답 시간 | 홉 수 | 그래프 패턴 탐지 | 사용 예시       |
 | ------------------ | --------- | ----- | ---------------- | --------------- |
-| 기본 (옵션 A)      | 1-2초     | 1-hop | ❌               | 실시간 대시보드 |
-| Multi-hop (옵션 B) | 3-8초     | 3-hop | ✅               | 수동 조사       |
+| 기본 (옵션 A)      | 1-2초     | 1-hop | 불가능               | 실시간 대시보드 |
+| Multi-hop (옵션 B) | 3-8초     | 3-hop | 가능               | 수동 조사       |
 
 ---
 
@@ -416,7 +416,7 @@ curl -X POST http://localhost:5001/api/analyze/address \
 
 ---
 
-## 📚 관련 문서
+## 관련 문서
 
 - [MULTI_HOP_REQUIREMENT.md](./MULTI_HOP_REQUIREMENT.md) - 상세 요구사항
 - [BACKEND_REQUEST_MULTI_HOP.md](./BACKEND_REQUEST_MULTI_HOP.md) - 백엔드 구현 가이드
