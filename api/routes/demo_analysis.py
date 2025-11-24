@@ -688,10 +688,17 @@ def load_stage2_scorer():
     global stage2_scorer
     if stage2_scorer is None:
         try:
-            model_path = project_root / "data" / "dataset" / "stage2_scorer_gradient_boosting.pkl"
+            # 최적화된 모델 우선 사용, 없으면 기존 모델 사용
+            model_path = project_root / "models" / "improved_stage2_model.pkl"
+            if not model_path.exists():
+                model_path = project_root / "models" / "stage2_scorer_gradient_boosting.pkl"
+            if not model_path.exists():
+                model_path = project_root / "data" / "dataset" / "stage2_scorer_gradient_boosting.pkl"
+            
             if model_path.exists():
                 stage2_scorer = Stage2Scorer()
                 stage2_scorer.load_model(model_path)
+                print(f"✅ Stage 2 모델 로드 완료: {model_path.name}")
             else:
                 print("⚠️  Stage 2 모델 파일을 찾을 수 없습니다. Stage 1만 사용합니다.")
         except Exception as e:

@@ -169,6 +169,8 @@ export ETHERSCAN_API_KEY="your_api_key_here"
 
 ## 📋 필수 데이터 파일
 
+### 데이터 리스트 파일
+
 다음 파일들이 `data/lists/` 디렉토리에 있어야 합니다:
 
 - `sdn_addresses.json` - OFAC SDN 리스트 (제재 대상 주소)
@@ -177,6 +179,15 @@ export ETHERSCAN_API_KEY="your_api_key_here"
 - `scam_addresses.json` - 사기 주소 리스트 (선택사항)
 
 이 파일들은 저장소에 포함되어 있습니다.
+
+### ML 모델 파일
+
+Stage 2 스코어링을 사용하려면 다음 모델 파일 중 하나가 필요합니다:
+
+- `models/improved_stage2_model.pkl` - **최적화된 모델 (권장)** - 성능: 99.20% Accuracy
+- `models/stage2_scorer_gradient_boosting.pkl` - 기존 Gradient Boosting 모델
+
+모델 파일이 없으면 Stage 1 (Rule-based)만 사용됩니다. 최적화된 모델은 저장소에 포함되어 있습니다.
 
 ---
 
