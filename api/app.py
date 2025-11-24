@@ -26,6 +26,12 @@ def demo():
     """데모 페이지"""
     return send_from_directory(project_root / 'demo', 'index.html')
 
+@app.route('/analyze/address', methods=['GET'])
+def analyze_address_redirect():
+    """/analyze/address GET 요청 - API 문서로 리다이렉트"""
+    from flask import redirect
+    return redirect('/api-docs#/Manual-Analysis/post_api_analyze_address', code=302)
+
 # Swagger 설정
 swagger_config = {
     "headers": [],
