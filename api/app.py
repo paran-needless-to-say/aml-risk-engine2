@@ -17,12 +17,13 @@ project_root = Path(__file__).parent.parent
 
 @app.route('/')
 def index():
-    """데모 페이지"""
-    return send_from_directory(project_root / 'demo', 'index.html')
+    """API 메인 페이지 - API 문서로 리다이렉트"""
+    from flask import redirect
+    return redirect('/api-docs', code=302)
 
 @app.route('/demo')
 def demo():
-    """데모 페이지 (별칭)"""
+    """데모 페이지"""
     return send_from_directory(project_root / 'demo', 'index.html')
 
 # Swagger 설정
