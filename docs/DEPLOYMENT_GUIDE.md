@@ -208,6 +208,21 @@ EXPOSE 5001
 CMD ["python3", "run_server.py"]
 ```
 
+### ⚠️ 재배포 필요 시점
+
+다음과 같은 경우 서버를 재배포해야 합니다:
+
+- **모델 파일 업데이트**: `models/improved_stage2_model.pkl` 등 최적화된 모델이 업데이트된 경우
+- **API 로직 변경**: Stage 1/Stage 2 스코어링 로직이 변경된 경우
+- **룰 변경**: `rules/tracex_rules.yaml` 파일이 수정된 경우
+- **임계값 변경**: Risk Level 결정 임계값이 변경된 경우
+
+재배포 방법:
+
+1. 최신 코드를 서버에 pull
+2. Docker 컨테이너 재시작 (또는 서버 재시작)
+3. Health check로 정상 동작 확인
+
 ```bash
 docker build -t aml-risk-engine .
 docker run -p 5001:5001 aml-risk-engine
